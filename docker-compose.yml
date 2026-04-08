@@ -1,0 +1,13 @@
+version: '3.8'
+services:
+  skinai:
+    build: .
+    ports: ["8000:8000"]
+    volumes:
+      - ./model/saved_model:/app/model/saved_model
+      - ./database:/app/database
+      - ./logs:/app/logs
+    environment:
+      - FLASK_ENV=production
+      - MODEL_PATH=/app/model/saved_model/best_model.h5
+    restart: unless-stopped

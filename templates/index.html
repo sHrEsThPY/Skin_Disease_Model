@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkinAI - Skin Disease Detection</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar fixed-top">
+        <div class="container d-flex justify-content-between align-items-center">
+            <a class="navbar-brand text-white fw-bold" href="#">
+                🔬 SkinAI
+            </a>
+            <span class="badge bg-danger rounded-pill px-3 py-2">Not Medical Advice</span>
+        </div>
+    </nav>
+
+    <main class="container mt-5 pt-5 pb-5">
+        <div class="row text-center mb-5 hero-section">
+            <div class="col-12 mt-3">
+                <h1 class="fw-bold mb-3">AI-Powered Skin Disease Screening</h1>
+                <p class="lead text-muted">Upload an image to identify early signs of common skin conditions using advanced transfer learning.</p>
+            </div>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-md-10">
+                <div class="card shadow-sm border-0 mb-4 upload-card position-relative">
+                    <div class="card-body p-4">
+                        <ul class="nav nav-tabs mb-4 border-0" id="uploadTab" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload-pane" type="button" role="tab">📁 Upload Image</button>
+                            </li>
+                            <li class="nav-item ms-2" role="presentation">
+                                <button class="nav-link" id="camera-tab" data-bs-toggle="tab" data-bs-target="#camera-pane" type="button" role="tab">📷 Use Camera</button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content" id="myTabContent">
+                            <!-- Upload Pane -->
+                            <div class="tab-pane fade show active" id="upload-pane" role="tabpanel">
+                                <div id="drop-zone" class="drop-zone d-flex flex-column align-items-center justify-content-center rounded">
+                                    <div id="upload-prompt" class="text-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" class="bi bi-cloud-arrow-up text-primary mb-3" viewBox="0 0 16 16">
+                                          <path fill-rule="evenodd" d="M7.646 5.146a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1-.708.708L8.5 6.707V10.5a.5.5 0 0 1-1 0V6.707L6.354 7.854a.5.5 0 1 1-.708-.708z"/>
+                                          <path d="M4.406 3.342A5.53 5.53 0 0 1 8 2c2.69 0 4.923 2 5.166 4.579C14.758 6.804 16 8.137 16 9.773 16 11.569 14.502 13 12.687 13H3.781C1.708 13 0 11.366 0 9.318c0-1.763 1.266-3.223 2.942-3.593.143-.863.698-1.723 1.464-2.383m.653.757c-.757.653-1.153 1.44-1.153 2.056v.448l-.445.049C2.064 6.805 1 7.952 1 9.318 1 10.785 2.23 12 3.781 12h8.906C13.98 12 15 10.988 15 9.773c0-1.216-1.02-2.228-2.313-2.228h-.5v-.5C12.188 4.825 10.328 3 8 3a4.53 4.53 0 0 0-2.941 1.1z"/>
+                                        </svg>
+                                        <h5 class="fw-semibold">Click to upload or drag image here</h5>
+                                        <p class="text-muted small mb-0 mt-2"><span class="badge border border-secondary text-secondary bg-transparent">JPEG · PNG · WEBP · Max 5MB</span></p>
+                                    </div>
+                                    <input type="file" id="file-input" class="d-none" accept=".jpeg, .jpg, .png, .webp">
+                                    <img id="image-preview" class="d-none img-fluid rounded" alt="Preview">
+                                </div>
+                                <div id="file-info" class="d-none mt-3 text-center fw-medium text-secondary small"></div>
+                            </div>
+
+                            <!-- Camera Pane -->
+                            <div class="tab-pane fade" id="camera-pane" role="tabpanel">
+                                <div class="camera-container text-center rounded bg-dark position-relative overflow-hidden" style="min-height: 350px;">
+                                    <button class="btn btn-primary mt-5" id="open-camera-btn">Open Camera</button>
+                                    <video id="camera-video" class="d-none w-100 h-100 object-fit-cover" autoplay playsinline style="min-height: 350px;"></video>
+                                    
+                                    <div id="camera-controls" class="d-none position-absolute bottom-0 w-100 p-3 bg-dark bg-opacity-75 d-flex justify-content-between align-items-center">
+                                        <button id="switch-camera-btn" class="btn btn-sm btn-outline-light">Switch Camera</button>
+                                        <button id="capture-btn" class="btn btn-light rounded-circle shadow-sm" style="width: 50px; height: 50px; border: 4px solid #3B82F6;"></button>
+                                        <div style="width: 100px;"></div>
+                                    </div>
+                                    
+                                    <div id="capture-preview-container" class="d-none position-absolute top-0 start-0 w-100 h-100 bg-dark">
+                                        <img id="capture-preview" class="w-100 h-100 object-fit-contain" alt="Captured view">
+                                        <div class="position-absolute bottom-0 w-100 p-3 bg-dark bg-opacity-75 d-flex justify-content-center gap-3">
+                                            <button id="retake-btn" class="btn btn-outline-light px-4">Retake</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <canvas id="camera-canvas" class="d-none"></canvas>
+                                <div class="alert alert-info mt-3 small mb-0 border-0 shadow-sm">
+                                    📌 For best results: hold camera 10–15 cm from skin, ensure good lighting, keep hand steady.
+                                </div>
+                            </div>
+                        </div>
+
+                        <button id="analyse-btn" class="btn btn-primary w-100 mt-4 py-3 mt-3 fw-bold shadow-sm rounded-3" disabled>Analyse Image</button>
+                        
+                        <!-- Overlay loading -->
+                        <div id="loading-overlay" class="d-none flex-column">
+                            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
+                            <h5 class="mt-3 fw-bold text-dark">Analysing…</h5>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Toast Warning -->
+                <div id="quality-warning" class="alert alert-warning d-none alert-dismissible fade show border-0 shadow-sm" role="alert">
+                    <strong>Quality Warning:</strong> <span id="quality-warning-text"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <!-- API Error Toast -->
+                <div id="error-toast" class="alert alert-danger d-none shadow-sm border-0" role="alert">
+                    <span id="error-text"></span>
+                </div>
+
+                <!-- Results Panel -->
+                <div id="results-panel" class="d-none mt-4 animate-fade-in-up">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="fw-bold mb-0">Analysis Results</h4>
+                        <span id="source-badge" class="badge bg-white text-secondary border shadow-sm">📁 Uploaded image</span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-7 mb-3">
+                            <div class="card h-100 border-0 shadow-sm rounded-4">
+                                <div class="card-body p-4">
+                                    <h6 class="text-uppercase text-muted fw-bold small mb-2">Primary Detection</h6>
+                                    <div class="d-flex justify-content-between align-items-end mb-2">
+                                        <h2 id="top1-class" class="fw-bold mb-0 text-dark"></h2>
+                                        <h3 id="top1-pct" class="mb-0 fw-bold text-primary"></h3>
+                                    </div>
+                                    <div class="progress mb-3 rounded-pill bg-light" style="height: 12px;">
+                                        <div id="top1-bar" class="progress-bar progress-bar-animated rounded-pill" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                    <span id="top1-badge" class="badge rounded-pill px-3 py-2 fw-semibold shadow-sm text-dark"></span>
+                                    
+                                    <hr class="my-4 text-muted opacity-25">
+                                    
+                                    <h6 class="text-uppercase text-muted fw-bold small mb-2">Secondary Match</h6>
+                                    <div class="d-flex justify-content-between">
+                                        <span id="top2-class" class="fw-semibold text-dark"></span>
+                                        <span id="top2-pct" class="text-muted fw-medium"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-5 mb-3">
+                            <div class="card h-100 border-0 shadow-sm rounded-4">
+                                <div class="card-body p-4">
+                                    <h6 class="text-uppercase text-muted fw-bold small mb-3">All Probabilities</h6>
+                                    <div id="all-probs-container" class="prob-list">
+                                        <!-- Pure CSS bar chart filled by JS -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="fallback-warning" class="alert alert-danger d-none mt-2 shadow-sm rounded-3 overflow-hidden border-0 bg-white" style="border-left: 6px solid var(--danger-color) !important;">
+                        <div class="d-flex align-items-center text-dark">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="var(--danger-color)" class="bi bi-exclamation-triangle-fill flex-shrink-0 me-3" viewBox="0 0 16 16">
+                                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                            </svg>
+                            <div>
+                                <h6 class="fw-bold mb-1">Low Confidence Prediction</h6>
+                                <p class="mb-0 small text-muted">Confidence is low. Please consult a qualified dermatologist.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card border-0 shadow-sm mt-4 mb-4 rounded-4">
+                        <div class="card-body bg-white rounded-4 p-4">
+                            <h6 class="text-uppercase text-muted fw-bold small mb-2">About <span id="desc-title"></span></h6>
+                            <p id="condition-desc" class="mb-4 small text-secondary lh-lg"></p>
+                            <h6 class="text-uppercase text-muted fw-bold small mb-2">Recommendation</h6>
+                            <p id="condition-rec" class="mb-0 small fw-semibold text-dark p-3 bg-light rounded-3"></p>
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <button id="reset-btn" class="btn btn-outline-secondary rounded-pill px-5 py-2 fw-semibold shadow-sm hover-elevate">Scan Another Image</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer mt-auto py-4 bg-dark text-white text-center">
+        <div class="container d-flex justify-content-center align-items-center flex-column">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-shield-exclamation text-warning mb-2" viewBox="0 0 16 16">
+              <path d="M5.338 1.59a61 61 0 0 0-2.837.856.48.48 0 0 0-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.7 10.7 0 0 0 2.287 2.233c.346.244.652.42.893.533q.18.085.293.118a1 1 0 0 0 .202.044c.056-.005.115-.02.202-.044q.114-.032.293-.118c.241-.113.547-.29.893-.533a10.7 10.7 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.596 4.477-.787 7.795-2.465 9.99a11.8 11.8 0 0 1-2.517 2.453 7 7 0 0 1-1.048.625c-.28.132-.581.24-.829.24s-.548-.108-.829-.24a7 7 0 0 1-1.048-.625 11.8 11.8 0 0 1-2.517-2.453C1.928 10.487.545 7.169 1.141 2.692A1.54 1.54 0 0 1 2.185 1.43 63 63 0 0 1 5.072.56"/>
+              <path d="M7.001 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.553.553 0 0 1-1.1 0z"/>
+            </svg>
+            <p class="mb-0 small fw-light px-3 text-white-50" style="max-width: 800px;">
+                <strong class="text-white">Disclaimer:</strong> SkinAI is intended for educational and preliminary screening purposes only. It does not constitute medical advice. Always consult a licensed dermatologist for diagnosis and treatment.
+            </p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

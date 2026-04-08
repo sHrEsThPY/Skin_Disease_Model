@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: skinai
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free

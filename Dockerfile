@@ -2,8 +2,8 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
+# Only libglib2.0-0 needed for Pillow; libgl1-mesa-glx removed in Debian Trixie
 RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
     libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
@@ -12,8 +12,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN mkdir -p logs/evaluation model/saved_model database
+ENV PORT=10000
+EXPOSE 10000
 
-EXPOSE 8000
-
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "120", "--preload", "app:app"]
+CMD gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120

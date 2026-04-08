@@ -1,151 +1,159 @@
-import os
-import io
-import time
-import json
+"""
+SkinAI Inference Engine — HAM10000 7-class EfficientNetB0
+"""
+import os, io, json
+os.environ['TF_USE_LEGACY_KERAS'] = '1'   # Fix for TF 2.16+ keras split
+
 import numpy as np
 from PIL import Image
-try:
-    import tensorflow as tf
-except ImportError:
-    tf = None
+import logging
+
+logger = logging.getLogger(__name__)
+
+# ── Disease info ─────────────────────────────────────────────────────────────
+DISEASE_INFO = {
+    'Actinic Keratosis': {
+        'alias':       'AK / Solar Keratosis',
+        'severity':    '⚠️ Precancerous',
+        'description': 'Rough, scaly patches caused by years of sun exposure. Actinic keratosis is a precancerous skin condition; if left untreated, it can develop into squamous cell carcinoma.',
+        'symptoms':    'Rough, dry, scaly patch, flat-to-bumpy surface, itching or burning, skin discolouration',
+        'treatment':   'Cryotherapy (liquid nitrogen), topical fluorouracil (5-FU), imiquimod cream, photodynamic therapy',
+        'prevention':  'Daily SPF 50+ sunscreen, protective clothing, regular dermatologist checks',
+    },
+    'Basal Cell Carcinoma': {
+        'alias':       'BCC',
+        'severity':    '🔴 Malignant (slow growing)',
+        'description': 'The most common form of skin cancer. BCC arises from basal cells in the lowest layer of the epidermis, typically on sun-exposed areas. Rarely metastasises but can cause significant local tissue damage.',
+        'symptoms':    'Pearly or waxy bump, flat flesh-coloured lesion, bleeding sore that heals and returns, pink growth with raised edges',
+        'treatment':   'Surgical excision, Mohs surgery, cryosurgery, radiation, topical imiquimod',
+        'prevention':  'Avoid UV exposure, use broad-spectrum sunscreen, annual skin checks',
+    },
+    'Benign Keratosis': {
+        'alias':       'Seborrheic Keratosis / BKL',
+        'severity':    '✅ Benign',
+        'description': 'Common, non-cancerous skin growth that appears as waxy, wart-like, tan to brown plaques. They appear to be "stuck on" the skin surface. No treatment is required unless they become irritated.',
+        'symptoms':    'Waxy, stuck-on appearance, tan/brown/black colour, round or oval, variable size',
+        'treatment':   'Usually no treatment needed. Cryotherapy or curettage if irritated or cosmetically bothersome',
+        'prevention':  'No specific prevention; genetic predisposition plays a role',
+    },
+    'Dermatofibroma': {
+        'alias':       'DF / Fibrous Histiocytoma',
+        'severity':    '✅ Benign',
+        'description': 'A common, harmless skin growth that results from an accumulation of fibroblasts (soft tissue cells). Often feels like a hard lump under the skin and may dimple inward when pinched.',
+        'symptoms':    'Firm, raised skin bump, brownish-red colour, dimples inward when pinched, slow growing',
+        'treatment':   'No treatment required unless symptomatic. Surgical excision if desired cosmetically',
+        'prevention':  'No known specific prevention',
+    },
+    'Melanoma': {
+        'alias':       'Malignant Melanoma',
+        'severity':    '🔴 Malignant (high-risk)',
+        'description': 'The most dangerous form of skin cancer. Melanoma develops from melanocytes and can metastasise to organs. Early detection is critical — survival rates drop significantly in later stages.',
+        'symptoms':    'Asymmetric mole, irregular/ragged border, multiple colours, diameter >6mm, evolving size or shape',
+        'treatment':   'Surgical excision, immunotherapy (pembrolizumab), targeted therapy (BRAF inhibitors), radiation',
+        'prevention':  'Avoid tanning beds, use SPF 30+ daily, regular self-checks using the ABCDE rule',
+    },
+    'Melanocytic Nevi': {
+        'alias':       'Common Mole / NV',
+        'severity':    '✅ Benign',
+        'description': 'Common benign skin lesions composed of clusters of melanocytes. Most people have between 10 and 40 moles. Although generally harmless, they should be monitored for changes that could indicate melanoma.',
+        'symptoms':    'Round, uniform brown spots, smooth surface, well-defined border, stable over time',
+        'treatment':   'No treatment needed. Surgical removal if desired or if suspicious change is noted',
+        'prevention':  'Limit sun exposure, use sunscreen, regular monitoring for changes',
+    },
+    'Vascular Lesion': {
+        'alias':       'Vascular Lesion / VASC',
+        'severity':    '✅ Benign',
+        'description': 'Skin lesions that arise from blood vessels, including cherry angiomas, angiokeratomas, and pyogenic granulomas. These are generally benign and often a cosmetic concern.',
+        'symptoms':    'Bright red to purple discolouration, may bleed easily, smooth surface, various sizes',
+        'treatment':   'Laser therapy, electrosurgery, cryotherapy if removal is desired',
+        'prevention':  'Generally not preventable; some may resolve spontaneously',
+    },
+}
 
 class SkinAIPredictor:
-    CLASS_NAMES = ['Acne Vulgaris', 'Eczema', 'Psoriasis', 'Fungal Infection']
-    CONFIDENCE_THRESHOLDS = {'high': 0.80, 'medium': 0.60}
-    
-    CONDITION_INFO = {
-        'Acne Vulgaris': {
-            'description': 'Acne vulgaris is a common skin condition that happens when hair follicles under the skin become clogged. Sebum—oil that helps keep skin from drying out—and dead skin cells plug the pores, which leads to outbreaks of lesions, commonly called pimples or zits.',
-            'recommendation': 'Mild cases can typically be managed with over-the-counter products containing benzoyl peroxide or salicylic acid. For persistent or severe acne, consider consulting a dermatologist for prescription medications to prevent scarring.'
-        },
-        'Eczema': {
-            'description': 'Atopic dermatitis, known as eczema, is a condition that makes your skin red and itchy. It is common in children but can occur at any age and tends to flare periodically.',
-            'recommendation': 'Moisturize your skin regularly and identify/avoid flare triggers. If standard moisturizing routines are not effectively controlling symptoms, see a healthcare provider or dermatologist for specialized treatments.'
-        },
-        'Psoriasis': {
-            'description': 'Psoriasis is a skin disease that causes a rash with itchy, scaly patches, most commonly on the knees, elbows, trunk and scalp. It is a common, long-term (chronic) disease with no cure, and it tends to go through cycles, flaring for a few weeks or months, then subsiding for a while.',
-            'recommendation': 'Treatment focuses on removing scales and stopping skin cells from growing so quickly. Topical ointments, light therapy, and medications can offer relief, so consulting with a dermatologist is highly recommended.'
-        },
-        'Fungal Infection': {
-            'description': 'Also known as tinea, a fungal skin infection is caused by a fungus. Common types include athlete\'s foot, jock itch, and ringworm. Fungi thrive in warm, moist environments and can be highly contagious.',
-            'recommendation': 'Keep the affected area clean and dry, and consider using over-the-counter antifungal creams. If the infection does not improve after a couple of weeks, or if it spreads, seek medical advice.'
-        }
-    }
-
-    def __init__(self, model_path=None):
-        if model_path is None:
-            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            model_path = os.path.join(base_dir, 'model', 'saved_model', 'best_model.h5')
-        
+    def __init__(self):
         self.model = None
-        self.temperature = 1.0
+        self.class_names = []
+        self._load_model()
 
-        if tf is not None and os.path.exists(model_path):
+    def _load_model(self):
+        base = os.path.dirname(__file__)
+        save_dir = os.path.join(base, 'saved_model')
+
+        # Load class names saved during training
+        names_path = os.path.join(save_dir, 'class_names.json')
+        if os.path.exists(names_path):
+            with open(names_path) as f:
+                self.class_names = json.load(f)
+        else:
+            # Fallback — alphabetical order used in training
+            self.class_names = sorted(DISEASE_INFO.keys())
+
+        model_path = os.path.join(save_dir, 'best_model.h5')
+        if not os.path.exists(model_path):
+            logger.warning(f"Model not found at {model_path}. Predictions will be unavailable.")
+            return
+
+        try:
+            # TF 2.16+ ships keras standalone; try multiple paths
             try:
-                base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                self.model = tf.keras.models.load_model(model_path)
-                
-                temp_path = os.path.join(base_dir, 'model', 'temperature.json')
-                if os.path.exists(temp_path):
-                    with open(temp_path, 'r') as f:
-                        t_data = json.load(f)
-                        self.temperature = t_data.get('temperature', 1.0)
-                        
-                # Warm up
-                dummy = np.zeros((1, 224, 224, 3), dtype=np.float32)
-                self.model.predict(dummy, verbose=0)
-            except Exception as e:
-                print(f"Failed to load model: {e}")
+                import tf_keras
+                self.model = tf_keras.models.load_model(model_path)
+            except (ImportError, Exception):
+                try:
+                    import keras
+                    self.model = keras.models.load_model(model_path)
+                except (ImportError, Exception):
+                    import tensorflow as tf
+                    self.model = tf.keras.models.load_model(model_path)
+            logger.info("✅ Model loaded successfully.")
+        except Exception as e:
+            logger.error(f"Failed to load model: {e}")
 
-    def preprocess(self, image_bytes):
+    def predict(self, image_bytes: bytes) -> dict:
+        if self.model is None:
+            return self._fallback()
+
         try:
             img = Image.open(io.BytesIO(image_bytes)).convert('RGB')
-        except Exception:
-            raise ValueError("Corrupted image or unsupported format")
+            img = img.resize((224, 224))
+            arr = np.array(img, dtype=np.float32)   # [0,255]
+            arr = np.expand_dims(arr, 0)             # (1,224,224,3)
 
-        width, height = img.size
-        if width < 50 or height < 50:
-            raise ValueError("Image too small (< 50x50 px)")
+            preds = self.model.predict(arr, verbose=0)[0]  # (7,)
 
-        img_resized = img.resize((224, 224))
-        img_array = np.array(img_resized).astype(np.float32)
+            top3_idx = preds.argsort()[::-1][:3]
+            results  = []
+            for i in top3_idx:
+                name = self.class_names[i]
+                info = DISEASE_INFO.get(name, {})
+                results.append({
+                    'disease':     name,
+                    'alias':       info.get('alias', ''),
+                    'confidence':  round(float(preds[i]) * 100, 1),
+                    'severity':    info.get('severity', ''),
+                    'description': info.get('description', ''),
+                    'symptoms':    info.get('symptoms', ''),
+                    'treatment':   info.get('treatment', ''),
+                    'prevention':  info.get('prevention', ''),
+                })
+            return {'results': results, 'fallback': False}
 
-        # Normalize to [0,1]
-        img_array = img_array / 255.0
+        except Exception as e:
+            logger.error(f"Inference error: {e}")
+            return self._fallback()
 
-        # Subtract ImageNet per-channel mean and divide by std
-        mean = np.array([0.485, 0.456, 0.406], dtype=np.float32)
-        std = np.array([0.229, 0.224, 0.225], dtype=np.float32)
-        img_array = (img_array - mean) / std
-
-        # Add batch dimension
-        img_batch = np.expand_dims(img_array, axis=0)
-        return img_batch, width, height
-
-    def predict(self, image_bytes):
-        start_time = time.time()
-
-        img_batch, width, height = self.preprocess(image_bytes)
-
-        if self.model is None:
-            # For testing without a model
-            probs = np.array([[0.1, 0.8, 0.05, 0.05]])
-        else:
-            if self.temperature != 1.0:
-                # Apply temperature scaling to logits
-                logits = self.model.predict(img_batch, verbose=0)
-                scaled_logits = logits / self.temperature
-                probs = np.exp(scaled_logits) / np.sum(np.exp(scaled_logits), axis=1, keepdims=True)
-            else:
-                probs = self.model.predict(img_batch, verbose=0)
-                
-        probs = probs[0]
-        sorted_indices = np.argsort(probs)[::-1]
-        
-        top1_idx = sorted_indices[0]
-        top2_idx = sorted_indices[1]
-        
-        top1_prob = float(probs[top1_idx])
-        top1_class = self.CLASS_NAMES[top1_idx]
-        top2_prob = float(probs[top2_idx])
-        top2_class = self.CLASS_NAMES[top2_idx]
-
-        conf_level = self._get_confidence_level(top1_prob)
-        fallback = top1_prob < self.CONFIDENCE_THRESHOLDS['medium']
-
-        all_probs = {self.CLASS_NAMES[i]: float(probs[i]) for i in range(len(self.CLASS_NAMES))}
-
-        color_map = {'high': 'green', 'medium': 'yellow', 'low': 'red'}
-
-        inference_time_ms = int((time.time() - start_time) * 1000)
-
-        result = {
-            "top1": {
-                "class": top1_class,
-                "confidence": top1_prob,
-                "confidence_pct": f"{top1_prob * 100:.1f}%",
-                "confidence_level": conf_level,
-                "color_code": color_map[conf_level]
-            },
-            "top2": {
-                "class": top2_class,
-                "confidence": top2_prob,
-                "confidence_pct": f"{top2_prob * 100:.1f}%"
-            },
-            "all_probabilities": all_probs,
-            "fallback_warning": fallback,
-            "condition_description": self.CONDITION_INFO[top1_class]['description'],
-            "recommendation": self.CONDITION_INFO[top1_class]['recommendation'],
-            "width": width,
-            "height": height,
-            "inference_time_ms": inference_time_ms
+    def _fallback(self):
+        return {
+            'results': [{
+                'disease': 'Melanocytic Nevi',
+                'alias': 'Common Mole',
+                'confidence': 0.0,
+                'severity': '✅ Benign',
+                'description': 'Model not loaded. Please train the model first.',
+                'symptoms': '—',
+                'treatment': '—',
+                'prevention': '—',
+            }],
+            'fallback': True,
         }
-        return result
-
-    def _get_confidence_level(self, confidence):
-        if confidence >= self.CONFIDENCE_THRESHOLDS['high']:
-            return 'high'
-        elif confidence >= self.CONFIDENCE_THRESHOLDS['medium']:
-            return 'medium'
-        else:
-            return 'low'

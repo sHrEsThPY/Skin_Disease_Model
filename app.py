@@ -1,88 +1,57 @@
-from flask import Flask, request, jsonify, render_template
-from flask_cors import CORS
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-from model.inference import SkinAIPredictor
-from database.logs import PredictionLogger
+"""
+SkinAI — Flask Application
+HAM10000 EfficientNetB0 skin lesion classifier
+"""
 import os
+os.environ['TF_USE_LEGACY_KERAS'] = '1'   # Fix tf.keras for TF 2.16+
+
+import io, base64, logging
+from flask import Flask, request, jsonify, render_template
+from model.inference import SkinAIPredictor
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-# Limit upload size globally to 5MB
-app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024   # 16 MB
 
-CORS(app)
-
-limiter = Limiter(
-    get_remote_address,
-    app=app,
-    default_limits=["30 per minute"]
-)
-
-# Initialize Predictor and Logger
 predictor = SkinAIPredictor()
-logger = PredictionLogger()
 
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
 
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-@app.route('/predict', methods=['POST'])
-@limiter.limit("30 per minute")
-def predict():
-    file = request.files.get('image')
-    if not file:
-        return jsonify({"error": "No image field found", "code": "400"}), 400
-
-    if file.filename:
-        if not allowed_file(file.filename) and request.content_type not in ['image/png', 'image/jpeg']:
-            return jsonify({"error": "File type not supported", "code": "400"}), 400
-
-    image_bytes = file.read()
-    if len(image_bytes) == 0:
-        return jsonify({"error": "Empty file", "code": "400"}), 400
-        
-    try:
-        result = predictor.predict(image_bytes)
-        
-        try:
-            logger.log_prediction(
-                top1_class=result['top1']['class'],
-                top1_conf=result['top1']['confidence'],
-                top2_class=result['top2']['class'],
-                top2_conf=result['top2']['confidence'],
-                img_width=result.get('width', 0),
-                img_height=result.get('height', 0),
-                inference_ms=result.get('inference_time_ms', 0),
-                fallback=result['fallback_warning']
-            )
-        except Exception as e:
-            print("Log Error:", e)
-
-        return jsonify(result), 200
-
-    except ValueError as ve:
-        return jsonify({"error": str(ve), "code": "400"}), 400
-    except Exception as e:
-        return jsonify({"error": "Internal server error", "code": "500"}), 500
-
-@app.route('/health', methods=['GET'])
-def health():
-    return jsonify({
-        "status": "ok", 
-        "model_loaded": predictor.model is not None if hasattr(predictor, 'model') else False, 
-        "classes": SkinAIPredictor.CLASS_NAMES, 
-        "version": "1.0.0"
-    })
-
-@app.route('/metrics', methods=['GET'])
-def metrics():
-    recent = logger.get_recent(100)
-    return jsonify(recent), 200
-
-@app.route('/', methods=['GET'])
+@app.route('/')
 def index():
     return render_template('index.html')
 
+
+@app.route('/health')
+def health():
+    return jsonify({'status': 'ok', 'model_loaded': predictor.model is not None})
+
+
+@app.route('/predict', methods=['POST'])
+def predict():
+    img_bytes = None
+
+    # Accept multipart file upload
+    if 'file' in request.files and request.files['file'].filename != '':
+        img_bytes = request.files['file'].read()
+
+    # Accept base64 JSON (from camera capture)
+    elif request.is_json:
+        data  = request.get_json(silent=True) or {}
+        b64   = data.get('image', '').split(',')[-1]
+        try:
+            img_bytes = base64.b64decode(b64)
+        except Exception as e:
+            return jsonify({'error': f'Invalid base64 data: {e}'}), 400
+
+    if not img_bytes:
+        return jsonify({'error': 'No image provided'}), 400
+
+    result = predictor.predict(img_bytes)
+    return jsonify(result)
+
+
 if __name__ == '__main__':
-    app.run(debug=False, host='0.0.0.0', port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=True)

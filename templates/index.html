@@ -1,199 +1,649 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SkinAI - Skin Disease Detection</title>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SkinAI — Clinical Skin Lesion Detection</title>
+<meta name="description" content="Upload or capture skin images for instant AI-powered analysis of 7 clinical skin conditions using HAM10000-trained EfficientNetB0."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<style>
+/* ───── TOKENS ───── */
+:root{
+  --bg:#060810;--surface:#0e1117;--card:#141924;--card2:#1c2333;
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.12);
+  --accent:#6d28d9;--accent2:#8b5cf6;--glow:rgba(109,40,217,.35);
+  --grad:linear-gradient(135deg,#6d28d9 0%,#2563eb 100%);
+  --grad2:linear-gradient(135deg,#7c3aed,#06b6d4);
+  --text:#f0f4ff;--muted:#7d8fa9;--dimmed:#4a5568;
+  --green:#10b981;--yellow:#f59e0b;--red:#ef4444;--blue:#3b82f6;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;min-height:100vh}
+::selection{background:var(--accent);color:#fff}
+a{text-decoration:none;color:inherit}
+
+/* ── NAV ── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:999;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:.9rem 2.5rem;
+  background:rgba(6,8,16,.8);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+}
+.logo{
+  font-size:1.3rem;font-weight:900;letter-spacing:-.02em;
+  background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  display:flex;align-items:center;gap:.5rem;
+}
+.logo i{font-size:1.1rem}
+.nav-links{display:flex;gap:2rem;list-style:none}
+.nav-links a{font-size:.875rem;font-weight:500;color:var(--muted);transition:color .2s}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{
+  background:var(--grad);color:#fff;padding:.5rem 1.25rem;
+  border-radius:8px;font-size:.875rem;font-weight:600;
+  transition:opacity .2s,transform .2s;
+}
+.nav-cta:hover{opacity:.85;transform:translateY(-1px)}
+@media(max-width:768px){.nav-links{display:none}.nav-cta{padding:.45rem .9rem;font-size:.8rem}}
+
+/* ── HERO ── */
+.hero{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  text-align:center;padding:7rem 1.5rem 5rem;position:relative;overflow:hidden;
+}
+.hero-bg{
+  position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% -5%,rgba(109,40,217,.3),transparent 65%),
+    radial-gradient(ellipse 40% 40% at 85% 80%,rgba(37,99,235,.18),transparent 60%);
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:.5rem;
+  background:rgba(109,40,217,.12);border:1px solid rgba(109,40,217,.35);
+  border-radius:999px;padding:.35rem 1rem;font-size:.78rem;font-weight:600;
+  color:var(--accent2);margin-bottom:1.75rem;letter-spacing:.03em;
+}
+.hero h1{
+  font-size:clamp(2.8rem,8vw,5.5rem);font-weight:900;
+  line-height:1.05;letter-spacing:-.03em;max-width:900px;margin:0 auto;
+}
+.hero h1 .grad{
+  background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.hero p{
+  color:var(--muted);font-size:1.1rem;max-width:560px;
+  margin:1.5rem auto 2.5rem;line-height:1.75;
+}
+.hero-btns{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+.btn-primary{
+  background:var(--grad);color:#fff;
+  padding:.9rem 2.2rem;border-radius:10px;font-weight:700;font-size:1rem;
+  border:none;cursor:pointer;transition:transform .2s,opacity .2s,box-shadow .2s;
+  box-shadow:0 0 0 rgba(109,40,217,0);
+}
+.btn-primary:hover{transform:translateY(-2px);opacity:.9;box-shadow:0 6px 28px var(--glow)}
+.btn-ghost{
+  background:transparent;color:var(--text);
+  padding:.9rem 2.2rem;border-radius:10px;font-weight:600;font-size:1rem;
+  border:1px solid var(--border2);cursor:pointer;transition:border-color .2s,transform .2s;
+}
+.btn-ghost:hover{border-color:var(--accent2);transform:translateY(-2px)}
+
+/* Stats bar */
+.stat-bar{
+  display:flex;gap:2.5rem;justify-content:center;flex-wrap:wrap;
+  margin-top:5rem;padding-top:2.5rem;border-top:1px solid var(--border);
+}
+.stat{text-align:center}
+.stat-val{
+  font-size:2.1rem;font-weight:900;letter-spacing:-.02em;
+  background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.stat-lbl{font-size:.8rem;color:var(--muted);margin-top:.2rem;letter-spacing:.04em;text-transform:uppercase}
+
+/* ── SECTIONS ── */
+section{padding:5rem 1.5rem}
+.container{max-width:1080px;margin:0 auto}
+.sec-chip{
+  display:inline-flex;align-items:center;gap:.4rem;
+  background:rgba(109,40,217,.1);border:1px solid rgba(109,40,217,.25);
+  border-radius:999px;padding:.25rem .8rem;font-size:.72rem;font-weight:700;
+  color:var(--accent2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.85rem;
+}
+.sec-title{font-size:clamp(1.6rem,4vw,2.6rem);font-weight:800;letter-spacing:-.02em;margin-bottom:.85rem;line-height:1.15}
+.sec-sub{color:var(--muted);line-height:1.75;max-width:520px}
+
+/* ── HOW IT WORKS ── */
+.how{background:var(--surface)}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.5rem;margin-top:3rem}
+.step{
+  background:var(--card);border:1px solid var(--border);border-radius:18px;
+  padding:2rem 1.5rem;text-align:center;
+  transition:border-color .3s,transform .3s,box-shadow .3s;position:relative;overflow:hidden;
+}
+.step::before{
+  content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:60%;height:2px;background:var(--grad);opacity:0;transition:opacity .3s;
+}
+.step:hover{border-color:var(--accent);transform:translateY(-5px);box-shadow:0 12px 40px rgba(109,40,217,.15)}
+.step:hover::before{opacity:1}
+.step-num{
+  width:44px;height:44px;border-radius:12px;background:rgba(109,40,217,.15);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;font-weight:900;color:var(--accent2);margin:0 auto 1.1rem;
+}
+.step h3{font-size:.95rem;font-weight:700;margin-bottom:.4rem}
+.step p{font-size:.82rem;color:var(--muted);line-height:1.65}
+
+/* ── DISEASES GRID ── */
+.d-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.25rem;margin-top:3rem}
+.d-card{
+  background:var(--card);border:1px solid var(--border);border-radius:16px;
+  padding:1.5rem;transition:border-color .3s,transform .3s;
+}
+.d-card:hover{border-color:var(--accent2);transform:translateY(-3px)}
+.d-tag{
+  display:inline-block;font-size:.68rem;font-weight:700;letter-spacing:.06em;
+  text-transform:uppercase;border-radius:999px;padding:.2rem .7rem;margin-bottom:.8rem;
+}
+.tag-danger{background:rgba(239,68,68,.12);color:#f87171}
+.tag-warn  {background:rgba(245,158,11,.12);color:#fbbf24}
+.tag-ok    {background:rgba(16,185,129,.12);color:#34d399}
+.d-card h3{font-size:.95rem;font-weight:700;margin-bottom:.3rem}
+.d-card .alias{font-size:.78rem;color:var(--muted);margin-bottom:.5rem}
+.d-card p{font-size:.82rem;color:var(--dimmed);line-height:1.65}
+
+/* ── ANALYZER SECTION ── */
+#check{background:var(--surface)}
+.analyzer{max-width:800px;margin:3rem auto 0}
+
+/* Tabs */
+.tabs{
+  display:flex;background:var(--card);border:1px solid var(--border);
+  border-radius:14px;overflow:hidden;margin-bottom:1.75rem;
+}
+.tab-btn{
+  flex:1;padding:.8rem;border:none;background:transparent;
+  font-family:inherit;font-size:.88rem;font-weight:600;color:var(--muted);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  gap:.5rem;transition:all .2s;
+}
+.tab-btn.active{background:var(--grad);color:#fff}
+.tab-pane{display:none}
+.tab-pane.active{display:block;animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* Drop zone */
+.drop-zone{
+  border:2px dashed var(--border2);border-radius:18px;padding:3rem;
+  text-align:center;cursor:pointer;transition:border-color .3s,background .3s;
+  position:relative;
+}
+.drop-zone:hover,.drop-zone.over{border-color:var(--accent2);background:rgba(109,40,217,.05)}
+.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.dz-icon{font-size:2.5rem;color:var(--accent2);margin-bottom:.85rem}
+.drop-zone h3{font-size:1rem;font-weight:700;margin-bottom:.35rem}
+.drop-zone p{font-size:.82rem;color:var(--muted)}
+#preview-wrap{margin:1.25rem 0;display:none}
+#preview-img{max-height:270px;width:100%;object-fit:cover;border-radius:14px;border:1px solid var(--border)}
+
+/* Camera */
+.cam-view{border-radius:18px;overflow:hidden;background:#000;aspect-ratio:4/3;border:2px solid var(--border)}
+#cam-feed{width:100%;height:100%;object-fit:cover;display:block}
+.cam-ctrls{display:flex;gap:.75rem;justify-content:center;margin-top:1rem;flex-wrap:wrap}
+.cam-btn{
+  background:var(--card2);color:var(--text);border:1px solid var(--border2);
+  border-radius:10px;padding:.6rem 1.4rem;font-family:inherit;font-weight:600;
+  font-size:.875rem;cursor:pointer;display:inline-flex;align-items:center;gap:.4rem;
+  transition:all .2s;
+}
+.cam-btn:hover{border-color:var(--accent2);color:var(--accent2)}
+.cam-btn.danger{color:var(--red);border-color:rgba(239,68,68,.3)}
+.cam-btn.danger:hover{background:rgba(239,68,68,.07)}
+#snap-preview{max-height:220px;width:100%;object-fit:cover;border-radius:14px;
+  border:1px solid var(--border);display:none;margin-top:1rem}
+
+/* CTA */
+.cta-row{margin-top:1.25rem}
+.cta-row button{width:100%;font-size:1rem}
+
+/* Spinner */
+.spin-wrap{display:none;flex-direction:column;align-items:center;gap:1rem;padding:2rem}
+.spin-wrap.show{display:flex}
+.spinner{
+  width:46px;height:46px;border:3px solid rgba(255,255,255,.08);
+  border-top-color:var(--accent2);border-radius:50%;
+  animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin-wrap p{color:var(--muted);font-size:.9rem}
+
+/* Result card */
+#result-card{
+  background:var(--card);border:1px solid var(--border);border-radius:20px;
+  padding:2rem 2rem 1.5rem;margin-top:2rem;display:none;
+}
+.res-header{display:flex;align-items:center;gap:1rem;margin-bottom:1.75rem;padding-bottom:1.25rem;border-bottom:1px solid var(--border)}
+.res-icon{
+  width:52px;height:52px;border-radius:14px;background:var(--grad);
+  display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:#fff;flex-shrink:0;
+}
+.res-header h2{font-size:1.2rem;font-weight:800}
+.res-header p{font-size:.82rem;color:var(--muted);margin-top:.2rem}
+
+/* Top prediction */
+.top-pred{margin-bottom:1.5rem}
+.pred-name{
+  font-size:1.7rem;font-weight:900;letter-spacing:-.02em;
+  background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  line-height:1.2;
+}
+.pred-alias{font-size:.85rem;color:var(--muted);margin:.2rem 0 .5rem}
+.sev-badge{
+  display:inline-flex;align-items:center;gap:.3rem;font-size:.78rem;font-weight:600;
+  padding:.25rem .75rem;border-radius:999px;border:1px solid;margin-bottom:.85rem;
+}
+.sev-badge.ok{background:rgba(16,185,129,.1);color:#34d399;border-color:rgba(16,185,129,.25)}
+.sev-badge.warn{background:rgba(245,158,11,.1);color:#fbbf24;border-color:rgba(245,158,11,.25)}
+.sev-badge.danger{background:rgba(239,68,68,.1);color:#f87171;border-color:rgba(239,68,68,.25)}
+
+/* Confidence */
+.conf-block{margin-bottom:.5rem}
+.conf-row{display:flex;justify-content:space-between;font-size:.78rem;color:var(--muted);margin-bottom:.35rem}
+.bar-track{height:8px;border-radius:999px;background:rgba(255,255,255,.07);overflow:hidden}
+.bar-fill{height:100%;border-radius:999px;transition:width 1.1s cubic-bezier(.4,0,.2,1)}
+.fill-a{background:var(--grad)}
+.fill-b{background:linear-gradient(90deg,#7c3aed88,#3b82f688)}
+.fill-c{background:linear-gradient(90deg,#6d28d944,#2563eb44)}
+
+/* Info box */
+.info-box{
+  background:rgba(255,255,255,.03);border:1px solid var(--border);
+  border-radius:14px;padding:1.25rem 1.5rem;margin:1.25rem 0;
+}
+.info-box h4{
+  font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--accent2);font-weight:700;margin-bottom:.6rem;
+  display:flex;align-items:center;gap:.4rem;
+}
+.info-box p{font-size:.875rem;color:var(--muted);line-height:1.75}
+.meta-grid2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:1rem}
+@media(max-width:500px){.meta-grid2{grid-template-columns:1fr}}
+.meta-box{
+  background:rgba(109,40,217,.06);border:1px solid rgba(109,40,217,.15);
+  border-radius:11px;padding:.85rem 1rem;
+}
+.meta-box .mlbl{font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:var(--accent2);font-weight:700;margin-bottom:.3rem;display:flex;align-items:center;gap:.3rem}
+.meta-box .mval{font-size:.825rem;color:var(--text);line-height:1.55}
+
+/* Runner up */
+.runner-up{
+  background:rgba(255,255,255,.025);border:1px solid var(--border);
+  border-radius:12px;padding:1rem 1.25rem;margin-top:.75rem;
+}
+.ru-title{font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:.4rem;font-weight:700}
+.ru-name{font-size:1rem;font-weight:700;margin-bottom:.4rem}
+
+/* Disclaimer */
+.disclaimer{
+  margin-top:1.25rem;padding:.85rem 1.1rem;border-radius:10px;
+  background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.18);
+  display:flex;gap:.6rem;align-items:flex-start;font-size:.78rem;color:var(--muted);line-height:1.6;
+}
+.disclaimer i{color:var(--red);flex-shrink:0;margin-top:.15rem}
+
+/* ── FOOTER ── */
+footer{
+  background:var(--surface);border-top:1px solid var(--border);
+  padding:3rem 1.5rem 2rem;text-align:center;
+}
+.f-logo{font-size:1.4rem;font-weight:900;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.6rem}
+footer p{font-size:.85rem;color:var(--muted);max-width:480px;margin:.25rem auto}
+.f-credits{font-size:.73rem;color:var(--dimmed);margin-top:1.5rem}
+</style>
 </head>
 <body>
-    <nav class="navbar fixed-top">
-        <div class="container d-flex justify-content-between align-items-center">
-            <a class="navbar-brand text-white fw-bold" href="#">
-                🔬 SkinAI
-            </a>
-            <span class="badge bg-danger rounded-pill px-3 py-2">Not Medical Advice</span>
+
+<!-- NAV -->
+<nav>
+  <div class="logo"><i class="fas fa-dna"></i> SkinAI</div>
+  <ul class="nav-links">
+    <li><a href="#home">Home</a></li>
+    <li><a href="#how">How it Works</a></li>
+    <li><a href="#conditions">Conditions</a></li>
+    <li><a href="#check">Analyzer</a></li>
+  </ul>
+  <a href="#check" class="nav-cta">Try Analyzer →</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <div class="hero-bg"></div>
+  <div class="hero-badge"><i class="fas fa-microscope"></i> HAM10000 · EfficientNetB0 · 7 Classes</div>
+  <h1>Clinical-Grade Skin<br/><span class="grad">Lesion Detection</span></h1>
+  <p>Upload a dermoscopy image or point your live camera. Our deep learning model trained on 10,000+ medical images classifies 7 skin conditions including melanoma — in under 2 seconds.</p>
+  <div class="hero-btns">
+    <button class="btn-primary" onclick="scrollTo('check')"><i class="fas fa-camera-medical"></i> Analyze Now</button>
+    <button class="btn-ghost"   onclick="scrollTo('conditions')">View Conditions</button>
+  </div>
+  <div class="stat-bar">
+    <div class="stat"><div class="stat-val">10,015</div><div class="stat-lbl">Training Images</div></div>
+    <div class="stat"><div class="stat-val">7</div><div class="stat-lbl">Skin Conditions</div></div>
+    <div class="stat"><div class="stat-val">EfficientB0</div><div class="stat-lbl">Architecture</div></div>
+    <div class="stat"><div class="stat-val">Free</div><div class="stat-lbl">No Sign-up</div></div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+  <div class="container">
+    <div class="sec-chip"><i class="fas fa-route"></i> Process</div>
+    <div class="sec-title">How SkinAI Works</div>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><h3>Upload or Capture</h3><p>Upload a saved photo or use your live camera to capture the affected skin area.</p></div>
+      <div class="step"><div class="step-num">2</div><h3>Deep Analysis</h3><p>EfficientNetB0 — pretrained on ImageNet and fine-tuned on HAM10000 — processes your image in real time.</p></div>
+      <div class="step"><div class="step-num">3</div><h3>Clinical Report</h3><p>Top 3 ranked predictions with confidence scores, symptoms, treatment options, and prevention advice.</p></div>
+      <div class="step"><div class="step-num">4</div><h3>See a Specialist</h3><p>Use results as a reference. Always consult a licensed dermatologist for an official medical diagnosis.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- CONDITIONS -->
+<section id="conditions">
+  <div class="container">
+    <div class="sec-chip"><i class="fas fa-clipboard-list"></i> Coverage</div>
+    <div class="sec-title">7 Conditions We Detect</div>
+    <div class="sec-sub">All conditions are from the HAM10000 clinical dermoscopy dataset.</div>
+    <div class="d-grid">
+      <div class="d-card"><span class="d-tag tag-warn">Precancerous</span><h3>Actinic Keratosis</h3><p class="alias">AK / Solar Keratosis</p><p>Rough, scaly sun-damaged patches that can progress to squamous cell carcinoma if untreated.</p></div>
+      <div class="d-card"><span class="d-tag tag-danger">Malignant</span><h3>Basal Cell Carcinoma</h3><p class="alias">BCC — Most Common Skin Cancer</p><p>Slow-growing cancer from basal cells. Rarely metastasises but causes local tissue damage.</p></div>
+      <div class="d-card"><span class="d-tag tag-ok">Benign</span><h3>Benign Keratosis</h3><p class="alias">Seborrheic Keratosis / BKL</p><p>Harmless waxy growths that appear "stuck on" the skin. Common with ageing, no treatment required.</p></div>
+      <div class="d-card"><span class="d-tag tag-ok">Benign</span><h3>Dermatofibroma</h3><p class="alias">Fibrous Histiocytoma / DF</p><p>Hard, firm nodule under the skin from accumulated fibroblasts. Dimples inward when pinched.</p></div>
+      <div class="d-card"><span class="d-tag tag-danger">High Risk</span><h3>Melanoma</h3><p class="alias">Malignant Melanoma</p><p>The deadliest skin cancer. Develops from melanocytes and can rapidly metastasise to organs.</p></div>
+      <div class="d-card"><span class="d-tag tag-ok">Benign</span><h3>Melanocytic Nevi</h3><p class="alias">Common Mole / NV</p><p>Clusters of melanocytes. Most are harmless but should be monitored for changes (ABCDE rule).</p></div>
+      <div class="d-card"><span class="d-tag tag-ok">Benign</span><h3>Vascular Lesion</h3><p class="alias">Cherry Angioma / VASC</p><p>Blood vessel-derived lesions ranging from cherry angiomas to angiokeratomas. Generally benign.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ANALYZER -->
+<section id="check">
+  <div class="container" style="text-align:center">
+    <div class="sec-chip" style="margin:0 auto .85rem"><i class="fas fa-flask"></i> Live Analyzer</div>
+    <div class="sec-title">Analyze Your Skin</div>
+    <p class="sec-sub" style="margin:0 auto 0">Upload an image or use your camera for instant AI-powered skin lesion analysis.</p>
+
+    <div class="analyzer">
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab-btn active" id="t-upload-btn" onclick="switchTab('upload')"><i class="fas fa-upload"></i> Upload Image</button>
+        <button class="tab-btn" id="t-camera-btn" onclick="switchTab('camera')"><i class="fas fa-video"></i> Live Camera</button>
+      </div>
+
+      <!-- Upload Pane -->
+      <div class="tab-pane active" id="t-upload">
+        <div class="drop-zone" id="dz">
+          <input type="file" id="file-input" accept="image/*"/>
+          <div class="dz-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+          <h3>Drop image here or click to browse</h3>
+          <p>Supports JPG, PNG, WEBP · Max 16 MB</p>
         </div>
-    </nav>
+        <div id="preview-wrap"><img id="preview-img" src="" alt="Preview"/></div>
+        <div class="cta-row" id="upload-cta" style="display:none">
+          <button class="btn-primary" onclick="analyzeFile()"><i class="fas fa-dna"></i> Run AI Analysis</button>
+        </div>
+      </div>
 
-    <main class="container mt-5 pt-5 pb-5">
-        <div class="row text-center mb-5 hero-section">
-            <div class="col-12 mt-3">
-                <h1 class="fw-bold mb-3">AI-Powered Skin Disease Screening</h1>
-                <p class="lead text-muted">Upload an image to identify early signs of common skin conditions using advanced transfer learning.</p>
-            </div>
+      <!-- Camera Pane -->
+      <div class="tab-pane" id="t-camera">
+        <div class="cam-view"><video id="cam-feed" autoplay playsinline muted></video></div>
+        <canvas id="snap-canvas" style="display:none"></canvas>
+        <img id="snap-preview" src="" alt="Captured"/>
+        <div class="cam-ctrls">
+          <button class="cam-btn" id="cam-start" onclick="startCam()"><i class="fas fa-video"></i> Start Camera</button>
+          <button class="cam-btn" id="cam-snap" onclick="snapCam()" style="display:none"><i class="fas fa-circle-dot"></i> Capture</button>
+          <button class="cam-btn danger" id="cam-stop" onclick="stopCam()" style="display:none"><i class="fas fa-stop"></i> Stop</button>
+        </div>
+        <div class="cta-row" id="camera-cta" style="display:none">
+          <button class="btn-primary" onclick="analyzeSnap()"><i class="fas fa-dna"></i> Analyze Captured Photo</button>
+        </div>
+      </div>
+
+      <!-- Spinner -->
+      <div class="spin-wrap" id="spin-wrap">
+        <div class="spinner"></div>
+        <p>Running inference — please wait…</p>
+      </div>
+
+      <!-- Result Card -->
+      <div id="result-card">
+        <div class="res-header">
+          <div class="res-icon"><i class="fas fa-stethoscope"></i></div>
+          <div><h2>Analysis Complete</h2><p>AI result · Not a clinical diagnosis · Consult a dermatologist</p></div>
         </div>
 
-        <div class="row justify-content-center">
-            <div class="col-lg-8 col-md-10">
-                <div class="card shadow-sm border-0 mb-4 upload-card position-relative">
-                    <div class="card-body p-4">
-                        <ul class="nav nav-tabs mb-4 border-0" id="uploadTab" role="tablist">
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link active" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload-pane" type="button" role="tab">📁 Upload Image</button>
-                            </li>
-                            <li class="nav-item ms-2" role="presentation">
-                                <button class="nav-link" id="camera-tab" data-bs-toggle="tab" data-bs-target="#camera-pane" type="button" role="tab">📷 Use Camera</button>
-                            </li>
-                        </ul>
-
-                        <div class="tab-content" id="myTabContent">
-                            <!-- Upload Pane -->
-                            <div class="tab-pane fade show active" id="upload-pane" role="tabpanel">
-                                <div id="drop-zone" class="drop-zone d-flex flex-column align-items-center justify-content-center rounded">
-                                    <div id="upload-prompt" class="text-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" class="bi bi-cloud-arrow-up text-primary mb-3" viewBox="0 0 16 16">
-                                          <path fill-rule="evenodd" d="M7.646 5.146a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1-.708.708L8.5 6.707V10.5a.5.5 0 0 1-1 0V6.707L6.354 7.854a.5.5 0 1 1-.708-.708z"/>
-                                          <path d="M4.406 3.342A5.53 5.53 0 0 1 8 2c2.69 0 4.923 2 5.166 4.579C14.758 6.804 16 8.137 16 9.773 16 11.569 14.502 13 12.687 13H3.781C1.708 13 0 11.366 0 9.318c0-1.763 1.266-3.223 2.942-3.593.143-.863.698-1.723 1.464-2.383m.653.757c-.757.653-1.153 1.44-1.153 2.056v.448l-.445.049C2.064 6.805 1 7.952 1 9.318 1 10.785 2.23 12 3.781 12h8.906C13.98 12 15 10.988 15 9.773c0-1.216-1.02-2.228-2.313-2.228h-.5v-.5C12.188 4.825 10.328 3 8 3a4.53 4.53 0 0 0-2.941 1.1z"/>
-                                        </svg>
-                                        <h5 class="fw-semibold">Click to upload or drag image here</h5>
-                                        <p class="text-muted small mb-0 mt-2"><span class="badge border border-secondary text-secondary bg-transparent">JPEG · PNG · WEBP · Max 5MB</span></p>
-                                    </div>
-                                    <input type="file" id="file-input" class="d-none" accept=".jpeg, .jpg, .png, .webp">
-                                    <img id="image-preview" class="d-none img-fluid rounded" alt="Preview">
-                                </div>
-                                <div id="file-info" class="d-none mt-3 text-center fw-medium text-secondary small"></div>
-                            </div>
-
-                            <!-- Camera Pane -->
-                            <div class="tab-pane fade" id="camera-pane" role="tabpanel">
-                                <div class="camera-container text-center rounded bg-dark position-relative overflow-hidden" style="min-height: 350px;">
-                                    <button class="btn btn-primary mt-5" id="open-camera-btn">Open Camera</button>
-                                    <video id="camera-video" class="d-none w-100 h-100 object-fit-cover" autoplay playsinline style="min-height: 350px;"></video>
-                                    
-                                    <div id="camera-controls" class="d-none position-absolute bottom-0 w-100 p-3 bg-dark bg-opacity-75 d-flex justify-content-between align-items-center">
-                                        <button id="switch-camera-btn" class="btn btn-sm btn-outline-light">Switch Camera</button>
-                                        <button id="capture-btn" class="btn btn-light rounded-circle shadow-sm" style="width: 50px; height: 50px; border: 4px solid #3B82F6;"></button>
-                                        <div style="width: 100px;"></div>
-                                    </div>
-                                    
-                                    <div id="capture-preview-container" class="d-none position-absolute top-0 start-0 w-100 h-100 bg-dark">
-                                        <img id="capture-preview" class="w-100 h-100 object-fit-contain" alt="Captured view">
-                                        <div class="position-absolute bottom-0 w-100 p-3 bg-dark bg-opacity-75 d-flex justify-content-center gap-3">
-                                            <button id="retake-btn" class="btn btn-outline-light px-4">Retake</button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <canvas id="camera-canvas" class="d-none"></canvas>
-                                <div class="alert alert-info mt-3 small mb-0 border-0 shadow-sm">
-                                    📌 For best results: hold camera 10–15 cm from skin, ensure good lighting, keep hand steady.
-                                </div>
-                            </div>
-                        </div>
-
-                        <button id="analyse-btn" class="btn btn-primary w-100 mt-4 py-3 mt-3 fw-bold shadow-sm rounded-3" disabled>Analyse Image</button>
-                        
-                        <!-- Overlay loading -->
-                        <div id="loading-overlay" class="d-none flex-column">
-                            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
-                            <h5 class="mt-3 fw-bold text-dark">Analysing…</h5>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Toast Warning -->
-                <div id="quality-warning" class="alert alert-warning d-none alert-dismissible fade show border-0 shadow-sm" role="alert">
-                    <strong>Quality Warning:</strong> <span id="quality-warning-text"></span>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-
-                <!-- API Error Toast -->
-                <div id="error-toast" class="alert alert-danger d-none shadow-sm border-0" role="alert">
-                    <span id="error-text"></span>
-                </div>
-
-                <!-- Results Panel -->
-                <div id="results-panel" class="d-none mt-4 animate-fade-in-up">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h4 class="fw-bold mb-0">Analysis Results</h4>
-                        <span id="source-badge" class="badge bg-white text-secondary border shadow-sm">📁 Uploaded image</span>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-7 mb-3">
-                            <div class="card h-100 border-0 shadow-sm rounded-4">
-                                <div class="card-body p-4">
-                                    <h6 class="text-uppercase text-muted fw-bold small mb-2">Primary Detection</h6>
-                                    <div class="d-flex justify-content-between align-items-end mb-2">
-                                        <h2 id="top1-class" class="fw-bold mb-0 text-dark"></h2>
-                                        <h3 id="top1-pct" class="mb-0 fw-bold text-primary"></h3>
-                                    </div>
-                                    <div class="progress mb-3 rounded-pill bg-light" style="height: 12px;">
-                                        <div id="top1-bar" class="progress-bar progress-bar-animated rounded-pill" role="progressbar" style="width: 0%"></div>
-                                    </div>
-                                    <span id="top1-badge" class="badge rounded-pill px-3 py-2 fw-semibold shadow-sm text-dark"></span>
-                                    
-                                    <hr class="my-4 text-muted opacity-25">
-                                    
-                                    <h6 class="text-uppercase text-muted fw-bold small mb-2">Secondary Match</h6>
-                                    <div class="d-flex justify-content-between">
-                                        <span id="top2-class" class="fw-semibold text-dark"></span>
-                                        <span id="top2-pct" class="text-muted fw-medium"></span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-5 mb-3">
-                            <div class="card h-100 border-0 shadow-sm rounded-4">
-                                <div class="card-body p-4">
-                                    <h6 class="text-uppercase text-muted fw-bold small mb-3">All Probabilities</h6>
-                                    <div id="all-probs-container" class="prob-list">
-                                        <!-- Pure CSS bar chart filled by JS -->
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="fallback-warning" class="alert alert-danger d-none mt-2 shadow-sm rounded-3 overflow-hidden border-0 bg-white" style="border-left: 6px solid var(--danger-color) !important;">
-                        <div class="d-flex align-items-center text-dark">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="var(--danger-color)" class="bi bi-exclamation-triangle-fill flex-shrink-0 me-3" viewBox="0 0 16 16">
-                                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
-                            </svg>
-                            <div>
-                                <h6 class="fw-bold mb-1">Low Confidence Prediction</h6>
-                                <p class="mb-0 small text-muted">Confidence is low. Please consult a qualified dermatologist.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card border-0 shadow-sm mt-4 mb-4 rounded-4">
-                        <div class="card-body bg-white rounded-4 p-4">
-                            <h6 class="text-uppercase text-muted fw-bold small mb-2">About <span id="desc-title"></span></h6>
-                            <p id="condition-desc" class="mb-4 small text-secondary lh-lg"></p>
-                            <h6 class="text-uppercase text-muted fw-bold small mb-2">Recommendation</h6>
-                            <p id="condition-rec" class="mb-0 small fw-semibold text-dark p-3 bg-light rounded-3"></p>
-                        </div>
-                    </div>
-
-                    <div class="text-center">
-                        <button id="reset-btn" class="btn btn-outline-secondary rounded-pill px-5 py-2 fw-semibold shadow-sm hover-elevate">Scan Another Image</button>
-                    </div>
-                </div>
-            </div>
+        <!-- Top result -->
+        <div class="top-pred">
+          <div class="pred-name" id="r-name">—</div>
+          <div class="pred-alias" id="r-alias"></div>
+          <div class="sev-badge" id="r-sev-badge"></div>
+          <div class="conf-block">
+            <div class="conf-row"><span>Confidence</span><span id="r-conf">0%</span></div>
+            <div class="bar-track"><div class="bar-fill fill-a" id="r-bar" style="width:0%"></div></div>
+          </div>
         </div>
-    </main>
 
-    <footer class="footer mt-auto py-4 bg-dark text-white text-center">
-        <div class="container d-flex justify-content-center align-items-center flex-column">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-shield-exclamation text-warning mb-2" viewBox="0 0 16 16">
-              <path d="M5.338 1.59a61 61 0 0 0-2.837.856.48.48 0 0 0-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.7 10.7 0 0 0 2.287 2.233c.346.244.652.42.893.533q.18.085.293.118a1 1 0 0 0 .202.044c.056-.005.115-.02.202-.044q.114-.032.293-.118c.241-.113.547-.29.893-.533a10.7 10.7 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.596 4.477-.787 7.795-2.465 9.99a11.8 11.8 0 0 1-2.517 2.453 7 7 0 0 1-1.048.625c-.28.132-.581.24-.829.24s-.548-.108-.829-.24a7 7 0 0 1-1.048-.625 11.8 11.8 0 0 1-2.517-2.453C1.928 10.487.545 7.169 1.141 2.692A1.54 1.54 0 0 1 2.185 1.43 63 63 0 0 1 5.072.56"/>
-              <path d="M7.001 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.553.553 0 0 1-1.1 0z"/>
-            </svg>
-            <p class="mb-0 small fw-light px-3 text-white-50" style="max-width: 800px;">
-                <strong class="text-white">Disclaimer:</strong> SkinAI is intended for educational and preliminary screening purposes only. It does not constitute medical advice. Always consult a licensed dermatologist for diagnosis and treatment.
-            </p>
+        <!-- Description -->
+        <div class="info-box">
+          <h4><i class="fas fa-info-circle"></i> About This Condition</h4>
+          <p id="r-desc">—</p>
+          <div class="meta-grid2">
+            <div class="meta-box"><div class="mlbl"><i class="fas fa-clipboard-list"></i> Symptoms</div><div class="mval" id="r-sym">—</div></div>
+            <div class="meta-box"><div class="mlbl"><i class="fas fa-pills"></i> Treatment</div><div class="mval" id="r-trt">—</div></div>
+            <div class="meta-box" style="grid-column:1/-1"><div class="mlbl"><i class="fas fa-shield-halved"></i> Prevention</div><div class="mval" id="r-prev">—</div></div>
+          </div>
         </div>
-    </footer>
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+        <!-- Runner ups -->
+        <div style="margin-top:.5rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700">Other Possibilities</div>
+        <div class="runner-up" id="ru2">
+          <div class="ru-title">2nd most likely</div>
+          <div class="ru-name" id="r2-name">—</div>
+          <div class="conf-block">
+            <div class="conf-row"><span></span><span id="r2-conf">0%</span></div>
+            <div class="bar-track"><div class="bar-fill fill-b" id="r2-bar" style="width:0%"></div></div>
+          </div>
+        </div>
+        <div class="runner-up" id="ru3">
+          <div class="ru-title">3rd most likely</div>
+          <div class="ru-name" id="r3-name">—</div>
+          <div class="conf-block">
+            <div class="conf-row"><span></span><span id="r3-conf">0%</span></div>
+            <div class="bar-track"><div class="bar-fill fill-c" id="r3-bar" style="width:0%"></div></div>
+          </div>
+        </div>
+
+        <div class="disclaimer">
+          <i class="fas fa-triangle-exclamation"></i>
+          <span>This tool is for <strong>educational purposes only</strong> and does not constitute medical advice. Results are generated by an AI model and may be inaccurate. Always consult a qualified dermatologist for diagnosis and treatment of skin conditions.</span>
+        </div>
+      </div><!-- /result-card -->
+
+    </div><!-- /analyzer -->
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="f-logo"><i class="fas fa-dna"></i> SkinAI</div>
+  <p>Clinical skin lesion detection powered by EfficientNetB0 trained on HAM10000.</p>
+  <p>Team 21 · 213CSE4301 · Pattern & Anomaly Detection</p>
+  <div class="f-credits">For educational use only · Not a medical device · © 2026 SkinAI</div>
+</footer>
+
+<script>
+/* ───── helpers ───── */
+function scrollTo(id){ document.getElementById(id).scrollIntoView({behavior:'smooth'}); }
+
+function sevClass(sevStr){
+  if(!sevStr) return 'ok';
+  const s = sevStr.toLowerCase();
+  if(s.includes('malignant') || s.includes('high-risk') || s.includes('high risk')) return 'danger';
+  if(s.includes('precancerous')) return 'warn';
+  return 'ok';
+}
+
+/* ───── Tabs ───── */
+function switchTab(name){
+  ['upload','camera'].forEach(t=>{
+    document.getElementById('t-'+t+'-btn').classList.toggle('active', t===name);
+    document.getElementById('t-'+t).classList.toggle('active', t===name);
+  });
+  if(name==='upload') stopCam();
+}
+
+/* ───── Upload ───── */
+const dz      = document.getElementById('dz');
+const fi      = document.getElementById('file-input');
+const prvWrap = document.getElementById('preview-wrap');
+const prvImg  = document.getElementById('preview-img');
+let uploadFile = null;
+
+dz.addEventListener('dragover', e=>{ e.preventDefault(); dz.classList.add('over'); });
+dz.addEventListener('dragleave',()=> dz.classList.remove('over'));
+dz.addEventListener('drop', e=>{ e.preventDefault(); dz.classList.remove('over'); if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+fi.addEventListener('change',()=>{ if(fi.files[0]) handleFile(fi.files[0]); });
+
+function handleFile(f){
+  if(!f.type.startsWith('image/')){ alert('Please upload an image file.'); return; }
+  uploadFile = f;
+  const r = new FileReader();
+  r.onload = e=>{ prvImg.src = e.target.result; };
+  r.readAsDataURL(f);
+  prvWrap.style.display = 'block';
+  document.getElementById('upload-cta').style.display = 'block';
+  hideResult();
+}
+
+function analyzeFile(){
+  if(!uploadFile){ alert('Select an image first.'); return; }
+  const fd = new FormData();
+  fd.append('file', uploadFile);
+  runInference(()=> fetch('/predict',{method:'POST',body:fd}));
+}
+
+/* ───── Camera ───── */
+let stream=null, snapData=null;
+
+async function startCam(){
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false});
+    document.getElementById('cam-feed').srcObject = stream;
+    document.getElementById('cam-start').style.display='none';
+    document.getElementById('cam-snap').style.display='inline-flex';
+    document.getElementById('cam-stop').style.display='inline-flex';
+    document.getElementById('snap-preview').style.display='none';
+    document.getElementById('camera-cta').style.display='none';
+    hideResult();
+  }catch(e){ alert('Camera unavailable or permission denied. Use HTTPS or localhost.'); }
+}
+
+function stopCam(){
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  const v = document.getElementById('cam-feed');
+  v.srcObject=null;
+  document.getElementById('cam-start').style.display='inline-flex';
+  document.getElementById('cam-snap').style.display='none';
+  document.getElementById('cam-stop').style.display='none';
+}
+
+function snapCam(){
+  const v  = document.getElementById('cam-feed');
+  const c  = document.getElementById('snap-canvas');
+  c.width  = v.videoWidth  || 512;
+  c.height = v.videoHeight || 512;
+  c.getContext('2d').drawImage(v,0,0);
+  snapData = c.toDataURL('image/jpeg',0.92);
+  const sp = document.getElementById('snap-preview');
+  sp.src = snapData; sp.style.display='block';
+  document.getElementById('camera-cta').style.display='block';
+  hideResult();
+}
+
+function analyzeSnap(){
+  if(!snapData){ alert('Capture a photo first.'); return; }
+  runInference(()=> fetch('/predict',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({image: snapData})
+  }));
+}
+
+/* ───── Shared inference ───── */
+const spinEl = document.getElementById('spin-wrap');
+const resEl  = document.getElementById('result-card');
+
+function hideResult(){ resEl.style.display='none'; spinEl.classList.remove('show'); }
+
+function runInference(fetchFn){
+  spinEl.classList.add('show');
+  resEl.style.display='none';
+  document.getElementById('upload-cta').style.display='none';
+  document.getElementById('camera-cta').style.display='none';
+
+  fetchFn()
+    .then(r=>r.json())
+    .then(d=>{
+      spinEl.classList.remove('show');
+      document.getElementById('upload-cta').style.display='block';
+      document.getElementById('camera-cta').style.display='block';
+      if(d.error){ alert('Error: '+d.error); return; }
+      showResult(d);
+    })
+    .catch(()=>{
+      spinEl.classList.remove('show');
+      document.getElementById('upload-cta').style.display='block';
+      document.getElementById('camera-cta').style.display='block';
+      alert('Server error. Make sure the Flask app is running.');
+    });
+}
+
+function showResult(d){
+  const rs = d.results || [];
+  if(!rs.length) return;
+
+  const top = rs[0];
+  document.getElementById('r-name').textContent = top.disease;
+  document.getElementById('r-alias').textContent= top.alias || '';
+  document.getElementById('r-conf').textContent = top.confidence + '%';
+  document.getElementById('r-desc').textContent = top.description || '—';
+  document.getElementById('r-sym').textContent  = top.symptoms    || '—';
+  document.getElementById('r-trt').textContent  = top.treatment   || '—';
+  document.getElementById('r-prev').textContent = top.prevention  || '—';
+
+  const sb  = document.getElementById('r-sev-badge');
+  sb.textContent = top.severity || '';
+  const sc = sevClass(top.severity);
+  sb.className = 'sev-badge '+sc;
+
+  const fill = d.fallback ? '0' : top.confidence;
+  const r2 = rs[1], r3 = rs[2];
+  if(r2){ document.getElementById('r2-name').textContent=r2.disease; document.getElementById('r2-conf').textContent=r2.confidence+'%'; }
+  if(r3){ document.getElementById('r3-name').textContent=r3.disease; document.getElementById('r3-conf').textContent=r3.confidence+'%'; }
+
+  resEl.style.display='block';
+  resEl.scrollIntoView({behavior:'smooth',block:'nearest'});
+
+  requestAnimationFrame(()=>{
+    document.getElementById('r-bar').style.width  = fill+'%';
+    document.getElementById('r2-bar').style.width = (r2 ? r2.confidence : 0)+'%';
+    document.getElementById('r3-bar').style.width = (r3 ? r3.confidence : 0)+'%';
+  });
+}
+</script>
 </body>
 </html>

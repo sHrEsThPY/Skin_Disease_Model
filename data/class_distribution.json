@@ -1,1 +1,9 @@
-{"AcneVulgaris": 15, "Eczema": 15, "Psoriasis": 15, "FungalInfection": 15}
+{
+  "Actinic Keratosis": 327,
+  "Basal Cell Carcinoma": 514,
+  "Benign Keratosis": 1099,
+  "Dermatofibroma": 115,
+  "Melanocytic Nevi": 6705,
+  "Melanoma": 1113,
+  "Vascular Lesion": 142
+}

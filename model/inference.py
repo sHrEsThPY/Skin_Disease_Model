@@ -7,7 +7,6 @@ Fixes:
   - Common medical terms per disease
 """
 import os, io, json
-os.environ['TF_USE_LEGACY_KERAS'] = '1'   # Fix for TF 2.16+ keras split
 
 import numpy as np
 from PIL import Image
@@ -284,16 +283,8 @@ class SkinAIPredictor:
             return
 
         try:
-            try:
-                import tf_keras
-                self.model = tf_keras.models.load_model(model_path)
-            except (ImportError, Exception):
-                try:
-                    import keras
-                    self.model = keras.models.load_model(model_path)
-                except (ImportError, Exception):
-                    import tensorflow as tf
-                    self.model = tf.keras.models.load_model(model_path)
+            import keras
+            self.model = keras.models.load_model(model_path)
             logger.info("✅ Model loaded successfully.")
         except Exception as e:
             self.load_error = str(e)

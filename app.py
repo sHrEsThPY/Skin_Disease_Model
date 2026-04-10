@@ -3,6 +3,7 @@ SkinAI — Flask Application
 HAM10000 EfficientNetB0 skin lesion classifier
 """
 import os
+os.environ['TF_USE_LEGACY_KERAS'] = '1'
 
 import io, base64, logging
 from flask import Flask, request, jsonify, render_template

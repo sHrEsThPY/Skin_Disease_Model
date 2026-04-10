@@ -283,8 +283,12 @@ class SkinAIPredictor:
             return
 
         try:
-            import keras
-            self.model = keras.models.load_model(model_path)
+            try:
+                import tf_keras
+                self.model = tf_keras.models.load_model(model_path)
+            except (ImportError, Exception):
+                import keras
+                self.model = keras.models.load_model(model_path)
             logger.info("✅ Model loaded successfully.")
         except Exception as e:
             self.load_error = str(e)

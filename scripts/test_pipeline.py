@@ -23,11 +23,13 @@ def run_tests():
 
     # 1. Preprocessing Test
     try:
-        predictor = SkinAIPredictor(model_path="dummy_path_no_exist")
+        predictor = SkinAIPredictor()
+        predictor.model = None # Force it to be none or leave it
         img_bytes = create_dummy_image()
-        img_batch, w, h = predictor.preprocess(img_bytes)
+        img_batch = predictor._preprocess(img_bytes)
         assert img_batch.shape == (1, 224, 224, 3)
-        assert np.max(img_batch) <= 3.0 and np.min(img_batch) >= -3.0 # Approx normal range
+        assert np.max(img_batch) <= 255.0 and np.min(img_batch) >= 0.0 # EfficientNet range
+
         print("✅ Preprocessing OK")
         passed += 1
     except AssertionError as e:

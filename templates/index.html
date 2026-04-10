@@ -159,7 +159,7 @@ section{padding:5rem 1.5rem}
 
 /* ── ANALYZER SECTION ── */
 #check{background:var(--surface)}
-.analyzer{max-width:800px;margin:3rem auto 0}
+.analyzer{max-width:820px;margin:3rem auto 0}
 
 /* Tabs */
 .tabs{
@@ -222,7 +222,7 @@ section{padding:5rem 1.5rem}
 @keyframes spin{to{transform:rotate(360deg)}}
 .spin-wrap p{color:var(--muted);font-size:.9rem}
 
-/* Result card */
+/* ── Result card ── */
 #result-card{
   background:var(--card);border:1px solid var(--border);border-radius:20px;
   padding:2rem 2rem 1.5rem;margin-top:2rem;display:none;
@@ -234,6 +234,16 @@ section{padding:5rem 1.5rem}
 }
 .res-header h2{font-size:1.2rem;font-weight:800}
 .res-header p{font-size:.82rem;color:var(--muted);margin-top:.2rem}
+
+/* Low-confidence warning */
+#low-conf-banner{
+  display:none;align-items:flex-start;gap:.65rem;
+  background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);
+  border-radius:12px;padding:.9rem 1.1rem;margin-bottom:1.25rem;
+  font-size:.82rem;color:#fbbf24;line-height:1.6;
+}
+#low-conf-banner i{flex-shrink:0;margin-top:.15rem}
+#low-conf-banner.show{display:flex}
 
 /* Top prediction */
 .top-pred{margin-bottom:1.5rem}
@@ -247,11 +257,11 @@ section{padding:5rem 1.5rem}
   display:inline-flex;align-items:center;gap:.3rem;font-size:.78rem;font-weight:600;
   padding:.25rem .75rem;border-radius:999px;border:1px solid;margin-bottom:.85rem;
 }
-.sev-badge.ok{background:rgba(16,185,129,.1);color:#34d399;border-color:rgba(16,185,129,.25)}
-.sev-badge.warn{background:rgba(245,158,11,.1);color:#fbbf24;border-color:rgba(245,158,11,.25)}
+.sev-badge.ok    {background:rgba(16,185,129,.1);color:#34d399;border-color:rgba(16,185,129,.25)}
+.sev-badge.warn  {background:rgba(245,158,11,.1);color:#fbbf24;border-color:rgba(245,158,11,.25)}
 .sev-badge.danger{background:rgba(239,68,68,.1);color:#f87171;border-color:rgba(239,68,68,.25)}
 
-/* Confidence */
+/* Confidence bar */
 .conf-block{margin-bottom:.5rem}
 .conf-row{display:flex;justify-content:space-between;font-size:.78rem;color:var(--muted);margin-bottom:.35rem}
 .bar-track{height:8px;border-radius:999px;background:rgba(255,255,255,.07);overflow:hidden}
@@ -260,7 +270,7 @@ section{padding:5rem 1.5rem}
 .fill-b{background:linear-gradient(90deg,#7c3aed88,#3b82f688)}
 .fill-c{background:linear-gradient(90deg,#6d28d944,#2563eb44)}
 
-/* Info box */
+/* ── Info box ── */
 .info-box{
   background:rgba(255,255,255,.03);border:1px solid var(--border);
   border-radius:14px;padding:1.25rem 1.5rem;margin:1.25rem 0;
@@ -271,6 +281,23 @@ section{padding:5rem 1.5rem}
   display:flex;align-items:center;gap:.4rem;
 }
 .info-box p{font-size:.875rem;color:var(--muted);line-height:1.75}
+
+/* Common terms pills */
+.terms-box{margin:.75rem 0 1rem}
+.terms-box h4{
+  font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--accent2);font-weight:700;margin-bottom:.55rem;
+  display:flex;align-items:center;gap:.4rem;
+}
+.term-pills{display:flex;flex-wrap:wrap;gap:.4rem}
+.term-pill{
+  background:rgba(109,40,217,.1);border:1px solid rgba(109,40,217,.22);
+  border-radius:999px;padding:.2rem .7rem;font-size:.73rem;color:var(--accent2);
+  font-weight:500;transition:background .2s;
+}
+.term-pill:hover{background:rgba(109,40,217,.2)}
+
+/* Meta grid */
 .meta-grid2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:1rem}
 @media(max-width:500px){.meta-grid2{grid-template-columns:1fr}}
 .meta-box{
@@ -280,13 +307,29 @@ section{padding:5rem 1.5rem}
 .meta-box .mlbl{font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:var(--accent2);font-weight:700;margin-bottom:.3rem;display:flex;align-items:center;gap:.3rem}
 .meta-box .mval{font-size:.825rem;color:var(--text);line-height:1.55}
 
-/* Runner up */
+/* ── Runner-up cards (expanded) ── */
 .runner-up{
   background:rgba(255,255,255,.025);border:1px solid var(--border);
-  border-radius:12px;padding:1rem 1.25rem;margin-top:.75rem;
+  border-radius:14px;padding:1.2rem 1.4rem;margin-top:.75rem;
 }
-.ru-title{font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:.4rem;font-weight:700}
-.ru-name{font-size:1rem;font-weight:700;margin-bottom:.4rem}
+.ru-title{font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:.35rem;font-weight:700}
+.ru-name{font-size:1rem;font-weight:700;margin-bottom:.15rem}
+.ru-alias{font-size:.78rem;color:var(--muted);margin-bottom:.4rem}
+.ru-sev{margin-bottom:.55rem}
+.ru-sev .sev-badge{margin-bottom:0}
+.ru-desc{font-size:.81rem;color:var(--dimmed);line-height:1.65;margin-top:.5rem}
+.ru-terms{margin-top:.6rem}
+.ru-terms .term-pills{flex-wrap:wrap}
+.ru-expand-toggle{
+  display:flex;align-items:center;gap:.35rem;margin-top:.65rem;
+  background:none;border:none;cursor:pointer;font-family:inherit;
+  font-size:.77rem;font-weight:600;color:var(--accent2);padding:0;
+  transition:opacity .2s;
+}
+.ru-expand-toggle:hover{opacity:.75}
+.ru-extra{display:none;margin-top:.75rem;border-top:1px solid var(--border);padding-top:.75rem}
+.ru-extra.open{display:block}
+.ru-extra .meta-grid2{margin-top:.5rem}
 
 /* Disclaimer */
 .disclaimer{
@@ -346,7 +389,7 @@ footer p{font-size:.85rem;color:var(--muted);max-width:480px;margin:.25rem auto}
     <div class="steps">
       <div class="step"><div class="step-num">1</div><h3>Upload or Capture</h3><p>Upload a saved photo or use your live camera to capture the affected skin area.</p></div>
       <div class="step"><div class="step-num">2</div><h3>Deep Analysis</h3><p>EfficientNetB0 — pretrained on ImageNet and fine-tuned on HAM10000 — processes your image in real time.</p></div>
-      <div class="step"><div class="step-num">3</div><h3>Clinical Report</h3><p>Top 3 ranked predictions with confidence scores, symptoms, treatment options, and prevention advice.</p></div>
+      <div class="step"><div class="step-num">3</div><h3>Clinical Report</h3><p>Top 3 ranked predictions with confidence scores, symptoms, common terms, treatment options, and prevention advice.</p></div>
       <div class="step"><div class="step-num">4</div><h3>See a Specialist</h3><p>Use results as a reference. Always consult a licensed dermatologist for an official medical diagnosis.</p></div>
     </div>
   </div>
@@ -419,14 +462,20 @@ footer p{font-size:.85rem;color:var(--muted);max-width:480px;margin:.25rem auto}
         <p>Running inference — please wait…</p>
       </div>
 
-      <!-- Result Card -->
+      <!-- ══════════ RESULT CARD ══════════ -->
       <div id="result-card">
         <div class="res-header">
           <div class="res-icon"><i class="fas fa-stethoscope"></i></div>
           <div><h2>Analysis Complete</h2><p>AI result · Not a clinical diagnosis · Consult a dermatologist</p></div>
         </div>
 
-        <!-- Top result -->
+        <!-- Low-confidence warning -->
+        <div id="low-conf-banner">
+          <i class="fas fa-triangle-exclamation"></i>
+          <span>The model's confidence is <strong>low</strong> for this image. Predictions may be unreliable — please ensure the image is clear, well-lit, and focused on the lesion. Always verify with a licensed dermatologist.</span>
+        </div>
+
+        <!-- ── PRIMARY PREDICTION ── -->
         <div class="top-pred">
           <div class="pred-name" id="r-name">—</div>
           <div class="pred-alias" id="r-alias"></div>
@@ -441,29 +490,69 @@ footer p{font-size:.85rem;color:var(--muted);max-width:480px;margin:.25rem auto}
         <div class="info-box">
           <h4><i class="fas fa-info-circle"></i> About This Condition</h4>
           <p id="r-desc">—</p>
-          <div class="meta-grid2">
-            <div class="meta-box"><div class="mlbl"><i class="fas fa-clipboard-list"></i> Symptoms</div><div class="mval" id="r-sym">—</div></div>
-            <div class="meta-box"><div class="mlbl"><i class="fas fa-pills"></i> Treatment</div><div class="mval" id="r-trt">—</div></div>
-            <div class="meta-box" style="grid-column:1/-1"><div class="mlbl"><i class="fas fa-shield-halved"></i> Prevention</div><div class="mval" id="r-prev">—</div></div>
-          </div>
         </div>
 
-        <!-- Runner ups -->
-        <div style="margin-top:.5rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700">Other Possibilities</div>
+        <!-- Common Medical Terms -->
+        <div class="terms-box">
+          <h4><i class="fas fa-tags"></i> Common Medical Terms</h4>
+          <div class="term-pills" id="r-terms"></div>
+        </div>
+
+        <!-- Symptoms / Treatment / Prevention -->
+        <div class="meta-grid2">
+          <div class="meta-box"><div class="mlbl"><i class="fas fa-clipboard-list"></i> Symptoms</div><div class="mval" id="r-sym">—</div></div>
+          <div class="meta-box"><div class="mlbl"><i class="fas fa-pills"></i> Treatment</div><div class="mval" id="r-trt">—</div></div>
+          <div class="meta-box" style="grid-column:1/-1"><div class="mlbl"><i class="fas fa-shield-halved"></i> Prevention</div><div class="mval" id="r-prev">—</div></div>
+        </div>
+
+        <!-- ── OTHER POSSIBILITIES ── -->
+        <div style="margin-top:1.5rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700">Other Possibilities</div>
+
+        <!-- Runner-up 2 -->
         <div class="runner-up" id="ru2">
           <div class="ru-title">2nd most likely</div>
           <div class="ru-name" id="r2-name">—</div>
+          <div class="ru-alias" id="r2-alias"></div>
+          <div class="ru-sev"><span class="sev-badge" id="r2-sev"></span></div>
           <div class="conf-block">
             <div class="conf-row"><span></span><span id="r2-conf">0%</span></div>
             <div class="bar-track"><div class="bar-fill fill-b" id="r2-bar" style="width:0%"></div></div>
           </div>
+          <div class="ru-desc" id="r2-desc"></div>
+          <div class="ru-terms"><div class="term-pills" id="r2-terms"></div></div>
+          <button class="ru-expand-toggle" onclick="toggleRu('ru2-extra',this)">
+            <i class="fas fa-chevron-down"></i> Show symptoms &amp; treatment
+          </button>
+          <div class="ru-extra" id="ru2-extra">
+            <div class="meta-grid2">
+              <div class="meta-box"><div class="mlbl"><i class="fas fa-clipboard-list"></i> Symptoms</div><div class="mval" id="r2-sym">—</div></div>
+              <div class="meta-box"><div class="mlbl"><i class="fas fa-pills"></i> Treatment</div><div class="mval" id="r2-trt">—</div></div>
+              <div class="meta-box" style="grid-column:1/-1"><div class="mlbl"><i class="fas fa-shield-halved"></i> Prevention</div><div class="mval" id="r2-prev">—</div></div>
+            </div>
+          </div>
         </div>
+
+        <!-- Runner-up 3 -->
         <div class="runner-up" id="ru3">
           <div class="ru-title">3rd most likely</div>
           <div class="ru-name" id="r3-name">—</div>
+          <div class="ru-alias" id="r3-alias"></div>
+          <div class="ru-sev"><span class="sev-badge" id="r3-sev"></span></div>
           <div class="conf-block">
             <div class="conf-row"><span></span><span id="r3-conf">0%</span></div>
             <div class="bar-track"><div class="bar-fill fill-c" id="r3-bar" style="width:0%"></div></div>
+          </div>
+          <div class="ru-desc" id="r3-desc"></div>
+          <div class="ru-terms"><div class="term-pills" id="r3-terms"></div></div>
+          <button class="ru-expand-toggle" onclick="toggleRu('ru3-extra',this)">
+            <i class="fas fa-chevron-down"></i> Show symptoms &amp; treatment
+          </button>
+          <div class="ru-extra" id="ru3-extra">
+            <div class="meta-grid2">
+              <div class="meta-box"><div class="mlbl"><i class="fas fa-clipboard-list"></i> Symptoms</div><div class="mval" id="r3-sym">—</div></div>
+              <div class="meta-box"><div class="mlbl"><i class="fas fa-pills"></i> Treatment</div><div class="mval" id="r3-trt">—</div></div>
+              <div class="meta-box" style="grid-column:1/-1"><div class="mlbl"><i class="fas fa-shield-halved"></i> Prevention</div><div class="mval" id="r3-prev">—</div></div>
+            </div>
           </div>
         </div>
 
@@ -481,7 +570,7 @@ footer p{font-size:.85rem;color:var(--muted);max-width:480px;margin:.25rem auto}
 <footer>
   <div class="f-logo"><i class="fas fa-dna"></i> SkinAI</div>
   <p>Clinical skin lesion detection powered by EfficientNetB0 trained on HAM10000.</p>
-  <p>Team 21 · 213CSE4301 · Pattern & Anomaly Detection</p>
+  <p>Team 21 · 213CSE4301 · Pattern &amp; Anomaly Detection</p>
   <div class="f-credits">For educational use only · Not a medical device · © 2026 SkinAI</div>
 </footer>
 
@@ -495,6 +584,34 @@ function sevClass(sevStr){
   if(s.includes('malignant') || s.includes('high-risk') || s.includes('high risk')) return 'danger';
   if(s.includes('precancerous')) return 'warn';
   return 'ok';
+}
+
+function renderTerms(containerId, terms){
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  el.innerHTML = '';
+  if(!terms || !terms.length){ el.innerHTML = '<span style="font-size:.78rem;color:var(--dimmed)">—</span>'; return; }
+  terms.forEach(t=>{
+    const span = document.createElement('span');
+    span.className='term-pill';
+    span.textContent = t;
+    el.appendChild(span);
+  });
+}
+
+function setSevBadge(id, sevStr){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.textContent = sevStr || '';
+  el.className = 'sev-badge ' + sevClass(sevStr);
+}
+
+function toggleRu(extraId, btn){
+  const el = document.getElementById(extraId);
+  const open = el.classList.toggle('open');
+  const icon = btn.querySelector('i');
+  icon.className = open ? 'fas fa-chevron-up' : 'fas fa-chevron-down';
+  btn.childNodes[1].textContent = open ? ' Hide details' : ' Show symptoms & treatment';
 }
 
 /* ───── Tabs ───── */
@@ -587,7 +704,15 @@ function analyzeSnap(){
 const spinEl = document.getElementById('spin-wrap');
 const resEl  = document.getElementById('result-card');
 
-function hideResult(){ resEl.style.display='none'; spinEl.classList.remove('show'); }
+function hideResult(){
+  resEl.style.display='none';
+  spinEl.classList.remove('show');
+  // reset runner-up expand toggles
+  ['ru2-extra','ru3-extra'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.classList.remove('open');
+  });
+}
 
 function runInference(fetchFn){
   spinEl.classList.add('show');
@@ -616,32 +741,52 @@ function showResult(d){
   const rs = d.results || [];
   if(!rs.length) return;
 
+  // ── Low-confidence banner ──
+  const banner = document.getElementById('low-conf-banner');
+  if(d.low_conf_warning || d.fallback){
+    banner.classList.add('show');
+  } else {
+    banner.classList.remove('show');
+  }
+
+  // ── Top prediction ──
   const top = rs[0];
-  document.getElementById('r-name').textContent = top.disease;
-  document.getElementById('r-alias').textContent= top.alias || '';
-  document.getElementById('r-conf').textContent = top.confidence + '%';
-  document.getElementById('r-desc').textContent = top.description || '—';
-  document.getElementById('r-sym').textContent  = top.symptoms    || '—';
-  document.getElementById('r-trt').textContent  = top.treatment   || '—';
-  document.getElementById('r-prev').textContent = top.prevention  || '—';
+  document.getElementById('r-name').textContent  = top.disease    || '—';
+  document.getElementById('r-alias').textContent = top.alias      || '';
+  document.getElementById('r-desc').textContent  = top.description|| '—';
+  document.getElementById('r-sym').textContent   = top.symptoms   || '—';
+  document.getElementById('r-trt').textContent   = top.treatment  || '—';
+  document.getElementById('r-prev').textContent  = top.prevention || '—';
+  document.getElementById('r-conf').textContent  = top.confidence + '%';
+  setSevBadge('r-sev-badge', top.severity);
+  renderTerms('r-terms', top.common_terms);
 
-  const sb  = document.getElementById('r-sev-badge');
-  sb.textContent = top.severity || '';
-  const sc = sevClass(top.severity);
-  sb.className = 'sev-badge '+sc;
+  // ── Runner-up helper ──
+  function fillRu(prefix, r){
+    if(!r) return;
+    document.getElementById(prefix+'-name').textContent  = r.disease    || '—';
+    document.getElementById(prefix+'-alias').textContent = r.alias      || '';
+    document.getElementById(prefix+'-conf').textContent  = r.confidence + '%';
+    document.getElementById(prefix+'-desc').textContent  = r.description|| '';
+    document.getElementById(prefix+'-sym').textContent   = r.symptoms   || '—';
+    document.getElementById(prefix+'-trt').textContent   = r.treatment  || '—';
+    document.getElementById(prefix+'-prev').textContent  = r.prevention || '—';
+    setSevBadge(prefix+'-sev', r.severity);
+    renderTerms(prefix+'-terms', r.common_terms);
+  }
 
-  const fill = d.fallback ? '0' : top.confidence;
   const r2 = rs[1], r3 = rs[2];
-  if(r2){ document.getElementById('r2-name').textContent=r2.disease; document.getElementById('r2-conf').textContent=r2.confidence+'%'; }
-  if(r3){ document.getElementById('r3-name').textContent=r3.disease; document.getElementById('r3-conf').textContent=r3.confidence+'%'; }
+  fillRu('r2', r2);
+  fillRu('r3', r3);
 
-  resEl.style.display='block';
-  resEl.scrollIntoView({behavior:'smooth',block:'nearest'});
+  resEl.style.display = 'block';
+  resEl.scrollIntoView({behavior:'smooth', block:'nearest'});
 
+  const fill = d.fallback ? 0 : top.confidence;
   requestAnimationFrame(()=>{
-    document.getElementById('r-bar').style.width  = fill+'%';
-    document.getElementById('r2-bar').style.width = (r2 ? r2.confidence : 0)+'%';
-    document.getElementById('r3-bar').style.width = (r3 ? r3.confidence : 0)+'%';
+    document.getElementById('r-bar').style.width   = fill + '%';
+    document.getElementById('r2-bar').style.width  = (r2 ? r2.confidence : 0) + '%';
+    document.getElementById('r3-bar').style.width  = (r3 ? r3.confidence : 0) + '%';
   });
 }
 </script>

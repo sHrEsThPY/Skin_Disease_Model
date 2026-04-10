@@ -24,7 +24,6 @@ def run_tests():
     # 1. Preprocessing Test
     try:
         predictor = SkinAIPredictor()
-        predictor.model = None # Force it to be none or leave it
         img_bytes = create_dummy_image()
         img_batch = predictor._preprocess(img_bytes)
         assert img_batch.shape == (1, 224, 224, 3)

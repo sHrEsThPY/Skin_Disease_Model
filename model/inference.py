@@ -283,12 +283,20 @@ class SkinAIPredictor:
             return
 
         try:
-            try:
-                import tf_keras
-                self.model = tf_keras.models.load_model(model_path)
-            except (ImportError, Exception):
-                import keras
-                self.model = keras.models.load_model(model_path)
+            import keras
+            
+            # Bulletproof: Custom BatchNormalization that blindly drops legacy renorm kwargs
+            class FixedBatchNormalization(keras.layers.BatchNormalization):
+                def __init__(self, **kwargs):
+                    kwargs.pop('renorm', None)
+                    kwargs.pop('renorm_clipping', None)
+                    kwargs.pop('renorm_momentum', None)
+                    super().__init__(**kwargs)
+                    
+            self.model = keras.models.load_model(
+                model_path,
+                custom_objects={'BatchNormalization': FixedBatchNormalization}
+            )
             logger.info("✅ Model loaded successfully.")
         except Exception as e:
             self.load_error = str(e)

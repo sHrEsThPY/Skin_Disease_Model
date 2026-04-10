@@ -296,7 +296,8 @@ class SkinAIPredictor:
                     self.model = tf.keras.models.load_model(model_path)
             logger.info("✅ Model loaded successfully.")
         except Exception as e:
-            logger.error(f"Failed to load model: {e}")
+            self.load_error = str(e)
+            logger.error(f"Failed to load model: {e}", exc_info=True)
 
     # ── Preprocess ────────────────────────────────────────────────────────
     def _preprocess(self, image_bytes: bytes) -> 'np.ndarray':
@@ -363,13 +364,14 @@ class SkinAIPredictor:
 
     # ── Fallback ──────────────────────────────────────────────────────────
     def _fallback(self):
+        err_msg = getattr(self, 'load_error', 'Unknown Error')
         return {
             'results': [{
                 'disease':      'Model Unavailable',
                 'alias':        '',
                 'confidence':   0.0,
                 'severity':     '❓ Unknown',
-                'description':  'The AI model is not loaded. Please train the model first by running model/train.py.',
+                'description':  f'The AI model failed to load. Please train the model first by running model/train.py. Reason: {err_msg}',
                 'common_terms': [],
                 'symptoms':     '—',
                 'treatment':    '—',

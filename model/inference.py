@@ -353,7 +353,43 @@ class SkinAIPredictor:
 
             # Safety: if top confidence is extremely low warn user
             top_conf = results[0]['confidence'] if results else 0
-            low_conf_warning = top_conf < 30.0
+            
+            # --- OUT OF DOMAIN DETECTION (OOD) ---
+            is_skin = True
+            try:
+                # Fast heuristic: check if image has at least 5% skin-like colored pixels
+                img = Image.open(io.BytesIO(image_bytes)).convert('HSV')
+                img = img.resize((100, 100))
+                pixels = img.getdata()
+                skin_count = 0
+                for h, s, v in pixels:
+                    # PIL Hue 0-255 (Red/Pink/Tan/Brown ranges)
+                    if (h <= 30 or h >= 230) and s > 20 and v > 40:
+                        skin_count += 1
+                if (skin_count / len(pixels)) < 0.05:
+                    is_skin = False
+            except Exception as e:
+                logger.error(f"OOD check failed: {e}")
+
+            if not is_skin or top_conf < 45.0:
+                logger.warning(f"OOD rejected. is_skin: {is_skin}, top_conf: {top_conf}")
+                return {
+                    'results': [{
+                        'disease':      'Unrecognized Image',
+                        'alias':        'Non-Skin / Out of Distribution',
+                        'confidence':   0.0,
+                        'severity':     '⚪ Unknown',
+                        'description':  'The AI detected that this might not be human skin, or the image quality is too low to classify properly. Please upload a clear, well-lit image of a skin lesion.',
+                        'common_terms': [],
+                        'symptoms':     '—',
+                        'treatment':    '—',
+                        'prevention':   '—',
+                    }],
+                    'fallback':         False,
+                    'low_conf_warning': True,
+                }
+
+            low_conf_warning = top_conf < 65.0
 
             return {
                 'results':           results,

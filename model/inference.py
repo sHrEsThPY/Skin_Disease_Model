@@ -351,7 +351,10 @@ class SkinAIPredictor:
 
     # ── Public predict ────────────────────────────────────────────────────
     def predict(self, image_bytes: bytes) -> dict:
-        if self.model is None:
+        has_groq = bool(os.environ.get("GROQ_API_KEY", ""))
+
+        # Allow Groq-only mode (local model may still be None)
+        if self.model is None and not has_groq:
             return self._fallback()
 
         try:
@@ -375,6 +378,17 @@ class SkinAIPredictor:
                     "prediction": None
                 }
 
+            # ── Groq Vision API (primary — most accurate) ─────────────────
+            if has_groq:
+                groq_result = self._groq_predict(image_bytes)
+                if groq_result is not None:
+                    return groq_result
+                logger.warning("Groq predict failed or returned None — falling back to local model.")
+
+            # ── Local Keras model (fallback / dummy) ──────────────────────
+            if self.model is None:
+                return self._fallback()
+
             arr  = self._preprocess(image_bytes)
             raw  = self.model.predict(arr, verbose=0)[0]          # (7,)
             preds = self._apply_temperature(raw)                   # calibrated
@@ -397,42 +411,19 @@ class SkinAIPredictor:
                     'prevention':   info.get('prevention', ''),
                 })
 
-            # Safety: if top confidence is extremely low warn user
             top_conf = results[0]['confidence'] if results else 0
-            
-            # --- OUT OF DOMAIN DETECTION (API BYPASS GATEKEEPER) ---
-            # We use an external Vision API (Groq) to intelligently reject any dog/car/scenery photos.
-            # If the API says it's not a skin photo, we bypass the AI prediction completely.
-            is_valid_skin = self._api_is_skin(image_bytes)
-            
-            if not is_valid_skin:
-                logger.warning(f"OOD rejected by GROQ_API_KEY vision verification.")
-                return {
-                    'results': [{
-                        'disease':      'Unrecognized Image',
-                        'alias':        'Non-Skin Object Detected',
-                        'confidence':   0.0,
-                        'severity':     '⚪ Unknown',
-                        'description':  'Our API detected that this is not a photo of human skin. Please ensure you are uploading a clear image of a skin lesion, not animals, scenery, or objects.',
-                        'common_terms': [],
-                        'symptoms':     '—',
-                        'treatment':    '—',
-                        'prevention':   '—',
-                    }],
-                    'fallback':         False,
-                    'low_conf_warning': True,
-                }
-                
-            # If the API verified it's skin, but confidence is insanely low (blurry photo), we still warn.
+
+            # Filter out truly unrecognisable images (too blurry)
             if top_conf < 40.0:
-                logger.warning(f"OOD rejected by strict confidence threshold. top_conf: {top_conf}")
+                logger.warning(f"Local model low confidence. top_conf: {top_conf}")
                 return {
                     'results': [{
                         'disease':      'Unrecognized Image',
+                        'common_name':  'Unrecognized Image',
                         'alias':        'Too Blurry / Low Confidence',
                         'confidence':   top_conf,
                         'severity':     '⚪ Unknown',
-                        'description':  'The AI confidence is too low to make a clinical prediction. The skin photo is likely entirely blurry or unfocused. Please upload a clear photo of the lesion.',
+                        'description':  'The AI confidence is too low. Please upload a clearer photo of the lesion.',
                         'common_terms': [],
                         'symptoms':     '—',
                         'treatment':    '—',
@@ -442,17 +433,15 @@ class SkinAIPredictor:
                     'low_conf_warning': True,
                 }
 
-            # Always return the best prediction for a valid skin image.
-            # low_conf_warning lets the frontend show a caution banner without
-            # hiding the result from the user.
             low_conf_warning = top_conf < 60.0
             if low_conf_warning:
-                logger.info(f"Returning prediction with low-conf warning. top_conf: {top_conf}")
+                logger.info(f"Returning local prediction with low-conf warning. top_conf: {top_conf}")
 
             return {
                 'results':           results,
                 'fallback':          False,
                 'low_conf_warning':  low_conf_warning,
+                'source':            'local_model',
             }
 
         except Exception as e:
@@ -465,10 +454,11 @@ class SkinAIPredictor:
         return {
             'results': [{
                 'disease':      'Model Unavailable',
+                'common_name':  'Service Temporarily Unavailable',
                 'alias':        '',
                 'confidence':   0.0,
                 'severity':     '❓ Unknown',
-                'description':  f'The AI model failed to load. Please train the model first by running model/train.py. Reason: {err_msg}',
+                'description':  f'The AI model failed to load. Reason: {err_msg}',
                 'common_terms': [],
                 'symptoms':     '—',
                 'treatment':    '—',
@@ -478,43 +468,157 @@ class SkinAIPredictor:
             'low_conf_warning': True,
         }
 
-    # ── API Bypass Gatekeeper ─────────────────────────────────────────────
-    def _api_is_skin(self, image_bytes: bytes) -> bool:
-        """Uses Groq Vision API to act as a 100% accurate external gatekeeper"""
-        import os
+    # ── Groq Vision Primary Predictor ─────────────────────────────────────
+    def _groq_predict(self, image_bytes: bytes) -> dict | None:
+        """
+        Uses Groq's llama-3.2-90b-vision-preview model to classify the skin lesion.
+        Returns a predict()-compatible result dict on success, or None on failure.
+        When None is returned, caller falls back to the local Keras model.
+        """
+        import base64, json as _json
+        from groq import Groq
+
         api_key = os.environ.get("GROQ_API_KEY", "")
-        # If API key is not set, we default to True and let the local model handle it 
         if not api_key:
-            return True 
-            
+            return None
+
+        CLASSES = list(DISEASE_INFO.keys())
+        class_list = "\n".join(f"- {c}" for c in CLASSES)
+
+        prompt = f"""You are a board-certified dermatology AI specialising in skin lesion image classification.
+
+Analyse the provided skin image and classify it into EXACTLY one of these 7 conditions:
+{class_list}
+
+You MUST respond with ONLY a valid JSON object — no markdown fences, no extra text.
+Format:
+{{
+  "is_skin_lesion": true,
+  "top_predictions": [
+    {{"disease": "<exact class name>", "confidence": <integer 0-100>}},
+    {{"disease": "<exact class name>", "confidence": <integer 0-100>}},
+    {{"disease": "<exact class name>", "confidence": <integer 0-100>}}
+  ],
+  "clinical_note": "<one concise sentence describing the key visual features you observed>"
+}}
+
+Rules:
+- disease MUST be the exact class name from the list above
+- top_predictions must have exactly 3 entries in descending confidence order
+- confidence values must sum to 100
+- if the image is clearly NOT a skin lesion (animal, object, scenery), set is_skin_lesion to false and all confidences to 0"""
+
+        try:
+            client = Groq(api_key=api_key)
+            b64 = base64.b64encode(image_bytes).decode('utf-8')
+
+            response = client.chat.completions.create(
+                messages=[{
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}},
+                    ],
+                }],
+                model="llama-3.2-90b-vision-preview",
+                temperature=0.1,
+                max_tokens=400,
+            )
+
+            raw = response.choices[0].message.content.strip()
+            # Strip markdown code fences if the model added them
+            if raw.startswith("```"):
+                raw = raw.split("```")[1]
+                if raw.startswith("json"):
+                    raw = raw[4:]
+            data = _json.loads(raw.strip())
+
+            # Non-skin rejection
+            if not data.get("is_skin_lesion", True):
+                logger.warning("Groq vision: image rejected as non-skin.")
+                return {
+                    'results': [{
+                        'disease':      'Unrecognized Image',
+                        'common_name':  'Not a Skin Image',
+                        'alias':        'Non-Skin Object Detected',
+                        'confidence':   0.0,
+                        'severity':     '⚪ Unknown',
+                        'description':  'The AI determined this image does not show a skin lesion. Please upload a clear, close-up photo of the affected skin area.',
+                        'common_terms': [],
+                        'symptoms':     '—',
+                        'treatment':    '—',
+                        'prevention':   '—',
+                    }],
+                    'fallback':         False,
+                    'low_conf_warning': True,
+                    'source':           'groq_vision',
+                }
+
+            # Build results from predictions
+            results = []
+            for pred in data.get("top_predictions", [])[:3]:
+                name = pred.get("disease", "").strip()
+                if name not in DISEASE_INFO:
+                    logger.warning(f"Groq returned unknown class: {name!r} — skipping.")
+                    continue
+                info = DISEASE_INFO[name]
+                results.append({
+                    'disease':      name,
+                    'common_name':  info.get('common_name', name),
+                    'alias':        info.get('alias', ''),
+                    'confidence':   round(float(pred.get("confidence", 0)), 1),
+                    'severity':     info.get('severity', ''),
+                    'description':  info.get('description', ''),
+                    'common_terms': info.get('common_terms', []),
+                    'symptoms':     info.get('symptoms', ''),
+                    'treatment':    info.get('treatment', ''),
+                    'prevention':   info.get('prevention', ''),
+                    'clinical_note': data.get('clinical_note', ''),
+                })
+
+            if not results:
+                logger.warning("Groq returned no valid disease classes.")
+                return None
+
+            top_conf = results[0]['confidence']
+            logger.info(f"Groq vision predict: {results[0]['disease']} @ {top_conf}%")
+
+            return {
+                'results':           results,
+                'fallback':          False,
+                'low_conf_warning':  top_conf < 60.0,
+                'source':            'groq_vision',
+            }
+
+        except Exception as e:
+            logger.error(f"Groq vision predict error: {e}", exc_info=True)
+            return None
+
+    # ── Legacy skin-only gatekeeper (kept for local-model fallback path) ──
+    def _api_is_skin(self, image_bytes: bytes) -> bool:
+        """Simple YES/NO skin check — only used when Groq full-predict is unavailable."""
+        api_key = os.environ.get("GROQ_API_KEY", "")
+        if not api_key:
+            return True
         try:
             import base64
             from groq import Groq
-            
-            client = Groq(api_key=api_key) 
+            client = Groq(api_key=api_key)
             b64_img = base64.b64encode(image_bytes).decode('utf-8')
-            
             completion = client.chat.completions.create(
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {"type": "text", "text": "Answer ONLY 'YES' if this image distinctly shows human skin, a body part, a skin lesion, or a mole. Answer ONLY 'NO' if it is an object, animal, vehicle, scenery, or completely irrelevant."},
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/jpeg;base64,{b64_img}",
-                                },
-                            },
-                        ],
-                    }
-                ],
+                messages=[{
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "Answer ONLY 'YES' if this image shows human skin or a skin lesion. Answer ONLY 'NO' otherwise."},
+                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64_img}"}},
+                    ],
+                }],
                 model="llama-3.2-11b-vision-preview",
                 temperature=0.0,
-                max_tokens=10,
+                max_tokens=5,
             )
             ans = completion.choices[0].message.content.strip().upper()
             return 'YES' in ans
         except Exception as e:
             logger.error(f"Gatekeeper API Error: {e}")
-            return True # Fallback if API fails
+            return True

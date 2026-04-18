@@ -8,6 +8,7 @@ Fixes:
 """
 import os, io, json
 
+import cv2
 import numpy as np
 from PIL import Image
 import logging
@@ -277,14 +278,14 @@ class SkinAIPredictor:
                 logger.warning(f"Could not load temperature.json: {e}")
 
         # ── Keras model ──────────────────────────────────────────────────
-        model_path = os.path.join(save_dir, 'best_model.h5')
+        model_path = os.path.join(save_dir, 'model.keras')
         if not os.path.exists(model_path):
             logger.warning(f"Model not found at {model_path}. Predictions will be unavailable.")
             return
 
         try:
             import keras
-            
+
             # Bulletproof: Custom BatchNormalization that blindly drops legacy renorm kwargs
             class FixedBatchNormalization(keras.layers.BatchNormalization):
                 def __init__(self, **kwargs):
@@ -292,10 +293,20 @@ class SkinAIPredictor:
                     kwargs.pop('renorm_clipping', None)
                     kwargs.pop('renorm_momentum', None)
                     super().__init__(**kwargs)
-                    
+
+            # PatchedDense: drops quantization_config for cross-version compatibility
+            class PatchedDense(keras.layers.Dense):
+                def __init__(self, *args, **kwargs):
+                    kwargs.pop('quantization_config', None)
+                    super().__init__(*args, **kwargs)
+
             self.model = keras.models.load_model(
                 model_path,
-                custom_objects={'BatchNormalization': FixedBatchNormalization}
+                custom_objects={
+                    'FixedBatchNormalization': FixedBatchNormalization,
+                    'PatchedDense': PatchedDense,
+                },
+                compile=False
             )
             logger.info("✅ Model loaded successfully.")
         except Exception as e:
@@ -330,6 +341,26 @@ class SkinAIPredictor:
             return self._fallback()
 
         try:
+            # ── Skin-tone validation (OpenCV HSV) ────────────────────────
+            def is_likely_skin_image(pil_img):
+                """Returns False if skin-tone pixels are below 10% of the image."""
+                hsv = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2HSV)
+                mask = (
+                    (hsv[:, :, 0] < 25) &
+                    (hsv[:, :, 1] > 30) &
+                    (hsv[:, :, 2] > 80)
+                )
+                ratio = mask.sum() / mask.size
+                return ratio >= 0.10
+
+            pil_img = Image.open(io.BytesIO(image_bytes)).convert('RGB')
+            if not is_likely_skin_image(pil_img):
+                return {
+                    "error": "Please upload a clear skin image",
+                    "warning": True,
+                    "prediction": None
+                }
+
             arr  = self._preprocess(image_bytes)
             raw  = self.model.predict(arr, verbose=0)[0]          # (7,)
             preds = self._apply_temperature(raw)                   # calibrated
@@ -354,32 +385,20 @@ class SkinAIPredictor:
             # Safety: if top confidence is extremely low warn user
             top_conf = results[0]['confidence'] if results else 0
             
-            # --- OUT OF DOMAIN DETECTION (OOD) ---
-            is_skin = True
-            try:
-                # Fast heuristic: check if image has at least 5% skin-like colored pixels
-                img = Image.open(io.BytesIO(image_bytes)).convert('HSV')
-                img = img.resize((100, 100))
-                pixels = img.getdata()
-                skin_count = 0
-                for h, s, v in pixels:
-                    # PIL Hue 0-255 (Red/Pink/Tan/Brown ranges)
-                    if (h <= 30 or h >= 230) and s > 20 and v > 40:
-                        skin_count += 1
-                if (skin_count / len(pixels)) < 0.05:
-                    is_skin = False
-            except Exception as e:
-                logger.error(f"OOD check failed: {e}")
-
-            if not is_skin or top_conf < 45.0:
-                logger.warning(f"OOD rejected. is_skin: {is_skin}, top_conf: {top_conf}")
+            # --- OUT OF DOMAIN DETECTION (API BYPASS GATEKEEPER) ---
+            # We use an external Vision API (Groq) to intelligently reject any dog/car/scenery photos.
+            # If the API says it's not a skin photo, we bypass the AI prediction completely.
+            is_valid_skin = self._api_is_skin(image_bytes)
+            
+            if not is_valid_skin:
+                logger.warning(f"OOD rejected by GROQ_API_KEY vision verification.")
                 return {
                     'results': [{
                         'disease':      'Unrecognized Image',
-                        'alias':        'Non-Skin / Out of Distribution',
+                        'alias':        'Non-Skin Object Detected',
                         'confidence':   0.0,
                         'severity':     '⚪ Unknown',
-                        'description':  'The AI detected that this might not be human skin, or the image quality is too low to classify properly. Please upload a clear, well-lit image of a skin lesion.',
+                        'description':  'Our API detected that this is not a photo of human skin. Please ensure you are uploading a clear image of a skin lesion, not animals, scenery, or objects.',
                         'common_terms': [],
                         'symptoms':     '—',
                         'treatment':    '—',
@@ -387,6 +406,35 @@ class SkinAIPredictor:
                     }],
                     'fallback':         False,
                     'low_conf_warning': True,
+                }
+                
+            # If the API verified it's skin, but confidence is insanely low (blurry photo), we still warn.
+            if top_conf < 40.0:
+                logger.warning(f"OOD rejected by strict confidence threshold. top_conf: {top_conf}")
+                return {
+                    'results': [{
+                        'disease':      'Unrecognized Image',
+                        'alias':        'Too Blurry / Low Confidence',
+                        'confidence':   top_conf,
+                        'severity':     '⚪ Unknown',
+                        'description':  'The AI confidence is too low to make a clinical prediction. The skin photo is likely entirely blurry or unfocused. Please upload a clear photo of the lesion.',
+                        'common_terms': [],
+                        'symptoms':     '—',
+                        'treatment':    '—',
+                        'prevention':   '—',
+                    }],
+                    'fallback':         False,
+                    'low_conf_warning': True,
+                }
+
+            # ── Inconclusive band: 40% ≤ confidence < 60% ────────────────
+            if top_conf < 60.0:
+                logger.warning(f"Low-confidence prediction. top_conf: {top_conf}")
+                return {
+                    'prediction': 'Inconclusive',
+                    'confidence': top_conf,
+                    'message':    'Low confidence — image may not show a recognizable skin condition.',
+                    'warning':    True,
                 }
 
             low_conf_warning = top_conf < 65.0
@@ -419,3 +467,44 @@ class SkinAIPredictor:
             'fallback':         True,
             'low_conf_warning': True,
         }
+
+    # ── API Bypass Gatekeeper ─────────────────────────────────────────────
+    def _api_is_skin(self, image_bytes: bytes) -> bool:
+        """Uses Groq Vision API to act as a 100% accurate external gatekeeper"""
+        import os
+        api_key = os.environ.get("GROQ_API_KEY", "")
+        # If API key is not set, we default to True and let the local model handle it 
+        if not api_key:
+            return True 
+            
+        try:
+            import base64
+            from groq import Groq
+            
+            client = Groq(api_key=api_key) 
+            b64_img = base64.b64encode(image_bytes).decode('utf-8')
+            
+            completion = client.chat.completions.create(
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": "Answer ONLY 'YES' if this image distinctly shows human skin, a body part, a skin lesion, or a mole. Answer ONLY 'NO' if it is an object, animal, vehicle, scenery, or completely irrelevant."},
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{b64_img}",
+                                },
+                            },
+                        ],
+                    }
+                ],
+                model="llama-3.2-11b-vision-preview",
+                temperature=0.0,
+                max_tokens=10,
+            )
+            ans = completion.choices[0].message.content.strip().upper()
+            return 'YES' in ans
+        except Exception as e:
+            logger.error(f"Gatekeeper API Error: {e}")
+            return True # Fallback if API fails

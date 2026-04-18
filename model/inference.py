@@ -19,14 +19,15 @@ logger = logging.getLogger(__name__)
 # Keys must match normalised class names (spaces, no underscores)
 DISEASE_INFO = {
     'Actinic Keratosis': {
+        'common_name':  'Sun Damage Spot',
         'alias':        'AK / Solar Keratosis / Intraepithelial Carcinoma',
         'severity':     '⚠️ Precancerous',
         'description':  (
-            'Actinic keratosis (AK) is a rough, scaly patch of skin caused by decades of '
-            'cumulative UV exposure. It is considered a precancerous lesion because, if left '
-            'untreated, roughly 5–10 % of cases can progress to invasive squamous cell '
-            'carcinoma. AKs are most common on sun-exposed areas such as the face, scalp, '
-            'ears, neck, forearms, and the back of the hands.'
+            'This is a rough, scaly patch caused by years of sun exposure. Think of it as '
+            'your skin showing the long-term effects of UV damage. It is not cancer yet, '
+            'but about 1 in 10 untreated cases can slowly turn into skin cancer over time. '
+            'These spots most commonly appear on the face, scalp, ears, and the back of hands — '
+            'places that get the most sun. See a doctor soon; it is very treatable when caught early.'
         ),
         'common_terms': [
             'Solar keratosis', 'Senile keratosis', 'Squamous intraepithelial neoplasia',
@@ -39,25 +40,27 @@ DISEASE_INFO = {
             'hard wart-like surface in severe cases'
         ),
         'treatment':    (
-            'Cryotherapy (liquid nitrogen); topical fluorouracil (5-FU); '
-            'imiquimod 5 % cream; diclofenac 3 % gel; photodynamic therapy (PDT); '
-            'laser resurfacing; chemical peels'
+            'Cryotherapy (liquid nitrogen freeze); topical fluorouracil (5-FU) cream; '
+            'imiquimod 5% cream; photodynamic therapy (light treatment); '
+            'laser resurfacing; chemical peels — all highly effective'
         ),
         'prevention':   (
-            'Daily SPF 50+ broad-spectrum sunscreen; UPF protective clothing and hats; '
-            'avoid peak UV hours (10 am – 4 pm); annual dermatologist skin checks'
+            'Wear SPF 50+ sunscreen every day; use UV-protective clothing and wide-brim hats; '
+            'avoid direct sun between 10 am – 4 pm; get an annual skin check'
         ),
     },
 
     'Basal Cell Carcinoma': {
+        'common_name':  'Skin Cancer (Common Type)',
         'alias':        'BCC / Rodent Ulcer',
         'severity':     '🔴 Malignant (slow-growing)',
         'description':  (
-            'Basal cell carcinoma is the most common form of skin cancer worldwide, arising '
-            'from basal cells in the deepest layer of the epidermis. It typically grows very '
-            'slowly and rarely metastasises, but can cause significant local tissue destruction '
-            'if ignored. Chronic UV exposure, fair skin, and immunosuppression are major risk '
-            'factors. BCC accounts for ~80 % of all non-melanoma skin cancers.'
+            'This is the most common type of skin cancer in the world, but also one of the '
+            'least dangerous when caught early. It grows very slowly and almost never spreads '
+            'to other parts of the body. It usually looks like a shiny, pearly bump or a sore '
+            'that won\'t heal. It is mainly caused by too much sun exposure over a lifetime. '
+            'Do NOT ignore it — left untreated it can damage surrounding skin and tissue. '
+            'Book a dermatologist appointment as soon as possible.'
         ),
         'common_terms': [
             'Nodular BCC', 'Superficial BCC', 'Morpheaform / Sclerosing BCC',
@@ -65,60 +68,65 @@ DISEASE_INFO = {
             'Basosquamous carcinoma', 'Rodent ulcer',
         ],
         'symptoms':     (
-            'Pearly or waxy translucent bump; flat, flesh-coloured or brown scar-like lesion; '
-            'bleeding or scabbing sore that heals and returns; pink growth with raised edges; '
-            'rolled borders with central ulceration'
+            'Shiny or pearly bump on skin; flat scar-like patch; a sore that bleeds, '
+            'scabs over, and keeps coming back; pink growth with raised edges; '
+            'rolled borders with a dent or ulcer in the centre'
         ),
         'treatment':    (
-            'Mohs micrographic surgery (gold standard); standard surgical excision; '
-            'cryosurgery; electrodessication and curettage; radiation therapy; '
-            'topical imiquimod or 5-FU (for superficial BCC); vismodegib/sonidegib (advanced)'
+            'Surgical removal (Mohs surgery — very precise); standard excision; '
+            'freezing (cryotherapy); radiation; creams like imiquimod for early cases; '
+            'oral medication for advanced cases. Cure rate is very high when caught early.'
         ),
         'prevention':   (
-            'Avoid UV overexposure; use broad-spectrum SPF 30+ sunscreen daily; '
-            'wear protective clothing; annual dermatology screening, especially after age 40'
+            'Avoid excessive sun exposure; apply SPF 30+ sunscreen daily; '
+            'wear protective clothing; get annual skin checks — especially after age 40'
         ),
     },
 
     'Benign Keratosis': {
+        'common_name':  'Harmless Skin Growth',
         'alias':        'Seborrheic Keratosis / BKL / SK',
         'severity':     '✅ Benign',
         'description':  (
-            'Benign keratosis-like lesions (BKL) are extremely common, non-cancerous skin '
-            'growths that appear as waxy, wart-like, tan-to-dark-brown plaques that look '
-            '"stuck on" the skin surface. They typically appear from middle age onward and '
-            'may increase in number with age. They are harmless but may be removed for '
-            'cosmetic reasons or if they become irritated.'
+            'Good news — this is completely harmless. These are very common skin growths '
+            'that look like waxy, "stuck-on" brown or tan patches. They are NOT cancer '
+            'and do NOT turn into cancer. Almost everyone develops a few of these as they '
+            'get older. They can appear anywhere on the body and may slowly grow larger '
+            'or increase in number over the years. You can have them removed if they '
+            'bother you cosmetically or rub against clothing, but medically there is no '
+            'need to treat them.'
         ),
         'common_terms': [
-            'Seborrheic keratosis', "Senile wart", 'Barnacle', 'Stucco keratosis',
+            'Seborrheic keratosis', 'Senile wart', 'Barnacle', 'Stucco keratosis',
             'Dermatosis papulosa nigra', 'Solar lentigo (flat variant)',
             'Lichen planus-like keratosis (LPLK)', 'Irritated SK',
         ],
         'symptoms':     (
             'Waxy, "stuck-on" appearance; tan, brown, or black colour; round or oval shape; '
-            'variable size (few mm to > 2.5 cm); slightly raised, rough texture; '
+            'variable size (a few mm to over 2.5 cm); slightly raised, rough texture; '
             'may itch if irritated; single or grouped lesions'
         ),
         'treatment':    (
-            'Usually no treatment required; cryotherapy or curettage if irritated; '
-            'shave excision; electrocautery; laser ablation (for cosmetic removal)'
+            'No treatment needed in most cases. If irritating: cryotherapy (freezing), '
+            'curettage (scraping), shave excision, or laser removal just for comfort or cosmetics.'
         ),
         'prevention':   (
-            'No specific prevention; genetic predisposition and age are primary drivers. '
-            'Sunscreen use may slow development of solar lentigos.'
+            'Cannot really be prevented — age and genetics are the main factors. '
+            'Sunscreen may slow the appearance of flat sun-related variants.'
         ),
     },
 
     'Dermatofibroma': {
+        'common_name':  'Firm Skin Lump (Harmless)',
         'alias':        'DF / Fibrous Histiocytoma / Benign Fibrous Histiocytoma',
         'severity':     '✅ Benign',
         'description':  (
-            'Dermatofibroma is a common, harmless benign skin growth composed of an '
-            'overgrowth of fibroblasts (soft tissue cells) in the dermis. It typically '
-            'presents as a small, firm, raised nodule most often found on the lower legs. '
-            'The lesion often dimples inward when pinched (Fitzpatrick dimple sign), which '
-            'is a key diagnostic feature. Cause is unknown but may follow minor skin trauma.'
+            'This is a small, harmless lump in the skin — completely non-cancerous. '
+            'It feels firm or hard when you press on it and is usually brownish-pink in colour. '
+            'A classic clue: if you pinch it, the skin dimples inward. Most of these appear '
+            'on the legs and can sometimes develop after a minor insect bite or small skin injury. '
+            'They are very slow-growing and stay small. No treatment is normally needed '
+            'unless it gets in the way or bothers you.'
         ),
         'common_terms': [
             'Fibrous histiocytoma', 'Sclerosing hemangioma', 'Nodular subepidermal fibrosis',
@@ -126,29 +134,31 @@ DISEASE_INFO = {
         ],
         'symptoms':     (
             'Firm, hard lump under the skin; brownish-pink to reddish-brown colour; '
-            'positive Fitzpatrick sign (dimples when pinched); typically 0.5–1 cm; '
-            'slow-growing; may be mildly tender or itch; single lesion usually'
+            'dimples when pinched (key sign); typically 0.5–1 cm in size; '
+            'slow-growing; may be mildly tender or itchy; usually a single lesion'
         ),
         'treatment':    (
-            'No treatment required in most cases; surgical excision if symptomatic or '
-            'cosmetically unacceptable; note: recurrence possible if not fully excised'
+            'Usually no treatment needed. If it is painful or bothers you cosmetically, '
+            'a doctor can remove it by surgical excision. Note: it can come back if not fully removed.'
         ),
         'prevention':   (
-            'No known specific prevention; may arise at sites of minor skin injury or '
-            'insect bites in some cases'
+            'No known way to prevent these. They sometimes appear after minor skin injuries '
+            'or insect bites, so protecting skin from trauma may help.'
         ),
     },
 
     'Melanoma': {
+        'common_name':  'Dangerous Skin Cancer (Melanoma)',
         'alias':        'Malignant Melanoma / Cutaneous Melanoma',
         'severity':     '🔴 Malignant (high-risk)',
         'description':  (
-            'Melanoma is the most dangerous form of skin cancer, developing from '
-            'melanocytes (pigment-producing cells). It can arise in a pre-existing mole or '
-            'appear as a new lesion. Melanoma has a high tendency to metastasise to lymph '
-            'nodes and distant organs. Early detection is critical — 5-year survival is > 98 % '
-            'for stage I but drops to ~20 % for stage IV. Annual full-body skin checks and '
-            'the ABCDE rule are essential for early identification.'
+            '⚠️ This is the most serious type of skin cancer. Please see a doctor TODAY. '
+            'Melanoma starts in the cells that give skin its colour (moles). Unlike most '
+            'skin cancers, it can spread to other organs like the lungs, liver, and brain '
+            'if not treated quickly. The good news: when caught in the very early stage, '
+            'the cure rate is over 98%. That is why acting fast is so important. '
+            'Use the ABCDE rule to spot it: Asymmetry, Border irregularity, Colour changes, '
+            'Diameter > 6mm, Evolving size or shape. Do not wait — book a dermatologist appointment immediately.'
         ),
         'common_terms': [
             'Superficial spreading melanoma', 'Nodular melanoma', 'Lentigo maligna melanoma',
@@ -156,31 +166,35 @@ DISEASE_INFO = {
             'Spitzoid melanoma', 'ABCDE rule', 'Breslow thickness', 'Clark level',
         ],
         'symptoms':     (
-            'Asymmetric mole; irregular or notched border; multiple colours (tan, brown, '
-            'black, red, white, blue); diameter > 6 mm (eraser-sized); evolving size, shape, '
-            'or colour; ulceration or bleeding; satellite lesions'
+            'Mole that is not the same on both sides (asymmetric); uneven or jagged border; '
+            'multiple colours in one spot (tan, brown, black, red, white, or blue); '
+            'larger than a pencil eraser (> 6mm); changing in size, shape, or colour; '
+            'bleeds or ulcerates'
         ),
         'treatment':    (
-            'Wide local excision (primary); sentinel lymph node biopsy; immunotherapy '
-            '(pembrolizumab, nivolumab, ipilimumab); targeted therapy (vemurafenib, '
-            'dabrafenib for BRAF V600E mutation); radiation; isolated limb perfusion'
+            'Surgical removal as first step; lymph node check; immunotherapy drugs '
+            '(e.g. pembrolizumab, nivolumab); targeted drugs for specific gene mutations; '
+            'radiation therapy. Highly effective if caught early.'
         ),
         'prevention':   (
-            'Avoid tanning beds; use SPF 30+ broad-spectrum sunscreen daily; seek shade; '
-            'monthly self-skin checks using ABCDE rule; annual dermatologist exam; '
-            'protect high-risk individuals with family history of melanoma'
+            'Never use tanning beds; apply SPF 30+ sunscreen every day; stay in shade; '
+            'check your moles monthly using the ABCDE rule; get a full-body skin check annually; '
+            'extra caution if family members have had melanoma'
         ),
     },
 
     'Melanocytic Nevi': {
+        'common_name':  'Common Mole',
         'alias':        'Common Mole / NV / Nevocellular Nevus',
         'severity':     '✅ Benign',
         'description':  (
-            'Melanocytic nevi (moles) are common, benign skin lesions consisting of clusters '
-            'of melanocytes. Most people have 10–40 moles. Although the vast majority are '
-            'harmless and stable, they should be monitored regularly for changes that could '
-            'indicate early melanoma transformation. Congenital nevi (present from birth) '
-            'carry a slightly higher lifetime risk of malignant transformation.'
+            'This is just a normal mole — nothing to worry about in most cases. '
+            'Almost everyone has between 10 and 40 moles by adulthood. They are simply '
+            'small clusters of pigment cells (melanocytes) and are completely harmless. '
+            'However, it is still a good habit to keep an eye on your moles and watch '
+            'for any changes in size, shape, colour, or texture. A mole that starts '
+            'changing could rarely be an early sign of melanoma, so if anything looks '
+            'different, mention it to a doctor at your next check-up.'
         ),
         'common_terms': [
             'Common mole', 'Junctional nevus', 'Compound nevus', 'Intradermal nevus',
@@ -188,30 +202,31 @@ DISEASE_INFO = {
             'Blue nevus', 'Spitz nevus', 'Halo nevus',
         ],
         'symptoms':     (
-            'Round or oval shape; uniform tan/brown colour; smooth surface; '
-            'well-defined borders; typically < 6 mm; flat or slightly raised; '
-            'may have hair; stable over years'
+            'Round or oval shape; even tan or brown colour; smooth surface; '
+            'clear defined borders; typically smaller than a pencil eraser (< 6mm); '
+            'flat or slightly raised; may have a hair growing from it; stays the same over years'
         ),
         'treatment':    (
-            'No treatment needed for typical moles; surgical excision if suspicious features; '
-            'dermoscopy follow-up for dysplastic nevi; complete excision for congenital giant nevi'
+            'No treatment needed for a normal mole. If a mole looks suspicious your doctor '
+            'may remove it and send it for testing. Atypical moles are monitored with a dermatoscope.'
         ),
         'prevention':   (
-            'Limit sun exposure from childhood; use sunscreen; early and regular '
-            'monitoring for changes using the ABCDE rule; genetic counselling for '
-            'familial atypical mole-melanoma syndrome (FAMM)'
+            'Reduce sun exposure from a young age; use sunscreen daily; '
+            'monitor moles monthly using the ABCDE rule; see a dermatologist annually'
         ),
     },
 
     'Vascular Lesion': {
+        'common_name':  'Blood Vessel Skin Spot',
         'alias':        'Vascular Lesion / VASC / Angioma',
         'severity':     '✅ Benign',
         'description':  (
-            'Vascular lesions are skin abnormalities arising from blood or lymphatic vessels. '
-            'They include a wide spectrum of conditions from cherry angiomas (very common in '
-            'adults) to angiokeratomas and pyogenic granulomas. Most are benign and purely '
-            'cosmetic, though pyogenic granulomas may bleed profusely with trauma. '
-            'Vascular birthmarks (port-wine stains, hemangiomas) also fall into this category.'
+            'This is a skin spot caused by small blood vessels near the surface of the skin. '
+            'The most common type is a "cherry angioma" — a tiny bright-red dot that many adults '
+            'get as they grow older, especially on the chest and stomach. These are completely '
+            'harmless. Some types (called pyogenic granulomas) can bleed a lot if bumped, '
+            'so those may be worth having a doctor remove. Birthmarks like port-wine stains '
+            'also fall into this category. Overall, these are cosmetic issues — not a health risk.'
         ),
         'common_terms': [
             'Cherry angioma (Campbell de Morgan spot)', 'Angiokeratoma', 'Pyogenic granuloma',
@@ -219,19 +234,18 @@ DISEASE_INFO = {
             'Lymphangioma', 'Venous lake', 'Glomus tumor',
         ],
         'symptoms':     (
-            'Bright red to purple discolouration; ranging in size from pinhead to centimetres; '
-            'smooth or slightly raised surface; may bleed easily if traumatised; '
-            'single or multiple lesions; some blanch under pressure'
+            'Bright red to purple spot; ranges from a pinhead to a few centimetres; '
+            'smooth or slightly raised surface; may bleed easily if scratched or bumped; '
+            'single or multiple spots; many fade when pressed'
         ),
         'treatment':    (
-            'Laser therapy (pulsed dye laser); electrosurgery; cryotherapy; '
-            'surgical excision for pyogenic granuloma; propranolol or laser for hemangiomas; '
-            'no treatment needed for small, asymptomatic cherry angiomas'
+            'Small, harmless ones need no treatment. Laser therapy is very effective for '
+            'cosmetic removal. Pyogenic granulomas (the bleeding type) are best removed by a doctor. '
+            'Haemangiomas in babies often shrink on their own over time.'
         ),
         'prevention':   (
-            'Generally not preventable; cherry angiomas increase normally with age; '
-            'pyogenic granulomas may follow trauma — keep wounds clean; '
-            'some resolve spontaneously (infantile hemangiomas)'
+            'Cannot really be prevented — cherry angiomas naturally increase with age. '
+            'Protect skin from trauma to avoid pyogenic granulomas forming.'
         ),
     },
 }
@@ -372,6 +386,7 @@ class SkinAIPredictor:
                 info = DISEASE_INFO.get(name, {})
                 results.append({
                     'disease':      name,
+                    'common_name':  info.get('common_name', name),
                     'alias':        info.get('alias', ''),
                     'confidence':   round(float(preds[i]) * 100, 1),
                     'severity':     info.get('severity', ''),

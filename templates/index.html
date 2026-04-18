@@ -1,794 +1,1632 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>SkinAI — Clinical Skin Lesion Detection</title>
-<meta name="description" content="Upload or capture skin images for instant AI-powered analysis of 7 clinical skin conditions using HAM10000-trained EfficientNetB0."/>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-<style>
-/* ───── TOKENS ───── */
-:root{
-  --bg:#060810;--surface:#0e1117;--card:#141924;--card2:#1c2333;
-  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.12);
-  --accent:#6d28d9;--accent2:#8b5cf6;--glow:rgba(109,40,217,.35);
-  --grad:linear-gradient(135deg,#6d28d9 0%,#2563eb 100%);
-  --grad2:linear-gradient(135deg,#7c3aed,#06b6d4);
-  --text:#f0f4ff;--muted:#7d8fa9;--dimmed:#4a5568;
-  --green:#10b981;--yellow:#f59e0b;--red:#ef4444;--blue:#3b82f6;
-}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;min-height:100vh}
-::selection{background:var(--accent);color:#fff}
-a{text-decoration:none;color:inherit}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Skin Disease Detection AI — Clinical Skin Lesion Detection</title>
+  <meta name="description"
+    content="Upload or capture skin images for instant AI-powered analysis of 7 clinical skin conditions using HAM10000-trained EfficientNetB0." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    /* ───── TOKENS ───── */
+    :root {
+      --bg: #060810;
+      --surface: #0e1117;
+      --card: #141924;
+      --card2: #1c2333;
+      --border: rgba(255, 255, 255, .07);
+      --border2: rgba(255, 255, 255, .12);
+      --accent: #6d28d9;
+      --accent2: #8b5cf6;
+      --glow: rgba(109, 40, 217, .35);
+      --grad: linear-gradient(135deg, #6d28d9 0%, #2563eb 100%);
+      --grad2: linear-gradient(135deg, #7c3aed, #06b6d4);
+      --text: #f0f4ff;
+      --muted: #7d8fa9;
+      --dimmed: #4a5568;
+      --green: #10b981;
+      --yellow: #f59e0b;
+      --red: #ef4444;
+      --blue: #3b82f6;
+    }
 
-/* ── NAV ── */
-nav{
-  position:fixed;top:0;left:0;right:0;z-index:999;
-  display:flex;align-items:center;justify-content:space-between;
-  padding:.9rem 2.5rem;
-  background:rgba(6,8,16,.8);backdrop-filter:blur(20px);
-  border-bottom:1px solid var(--border);
-}
-.logo{
-  font-size:1.3rem;font-weight:900;letter-spacing:-.02em;
-  background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  display:flex;align-items:center;gap:.5rem;
-}
-.logo i{font-size:1.1rem}
-.nav-links{display:flex;gap:2rem;list-style:none}
-.nav-links a{font-size:.875rem;font-weight:500;color:var(--muted);transition:color .2s}
-.nav-links a:hover{color:var(--text)}
-.nav-cta{
-  background:var(--grad);color:#fff;padding:.5rem 1.25rem;
-  border-radius:8px;font-size:.875rem;font-weight:600;
-  transition:opacity .2s,transform .2s;
-}
-.nav-cta:hover{opacity:.85;transform:translateY(-1px)}
-@media(max-width:768px){.nav-links{display:none}.nav-cta{padding:.45rem .9rem;font-size:.8rem}}
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
 
-/* ── HERO ── */
-.hero{
-  min-height:100vh;display:flex;align-items:center;justify-content:center;
-  text-align:center;padding:7rem 1.5rem 5rem;position:relative;overflow:hidden;
-}
-.hero-bg{
-  position:absolute;inset:0;pointer-events:none;
-  background:
-    radial-gradient(ellipse 70% 55% at 50% -5%,rgba(109,40,217,.3),transparent 65%),
-    radial-gradient(ellipse 40% 40% at 85% 80%,rgba(37,99,235,.18),transparent 60%);
-}
-.hero-badge{
-  display:inline-flex;align-items:center;gap:.5rem;
-  background:rgba(109,40,217,.12);border:1px solid rgba(109,40,217,.35);
-  border-radius:999px;padding:.35rem 1rem;font-size:.78rem;font-weight:600;
-  color:var(--accent2);margin-bottom:1.75rem;letter-spacing:.03em;
-}
-.hero h1{
-  font-size:clamp(2.8rem,8vw,5.5rem);font-weight:900;
-  line-height:1.05;letter-spacing:-.03em;max-width:900px;margin:0 auto;
-}
-.hero h1 .grad{
-  background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
-}
-.hero p{
-  color:var(--muted);font-size:1.1rem;max-width:560px;
-  margin:1.5rem auto 2.5rem;line-height:1.75;
-}
-.hero-btns{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
-.btn-primary{
-  background:var(--grad);color:#fff;
-  padding:.9rem 2.2rem;border-radius:10px;font-weight:700;font-size:1rem;
-  border:none;cursor:pointer;transition:transform .2s,opacity .2s,box-shadow .2s;
-  box-shadow:0 0 0 rgba(109,40,217,0);
-}
-.btn-primary:hover{transform:translateY(-2px);opacity:.9;box-shadow:0 6px 28px var(--glow)}
-.btn-ghost{
-  background:transparent;color:var(--text);
-  padding:.9rem 2.2rem;border-radius:10px;font-weight:600;font-size:1rem;
-  border:1px solid var(--border2);cursor:pointer;transition:border-color .2s,transform .2s;
-}
-.btn-ghost:hover{border-color:var(--accent2);transform:translateY(-2px)}
+    html {
+      scroll-behavior: smooth
+    }
 
-/* Stats bar */
-.stat-bar{
-  display:flex;gap:2.5rem;justify-content:center;flex-wrap:wrap;
-  margin-top:5rem;padding-top:2.5rem;border-top:1px solid var(--border);
-}
-.stat{text-align:center}
-.stat-val{
-  font-size:2.1rem;font-weight:900;letter-spacing:-.02em;
-  background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
-}
-.stat-lbl{font-size:.8rem;color:var(--muted);margin-top:.2rem;letter-spacing:.04em;text-transform:uppercase}
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      min-height: 100vh
+    }
 
-/* ── SECTIONS ── */
-section{padding:5rem 1.5rem}
-.container{max-width:1080px;margin:0 auto}
-.sec-chip{
-  display:inline-flex;align-items:center;gap:.4rem;
-  background:rgba(109,40,217,.1);border:1px solid rgba(109,40,217,.25);
-  border-radius:999px;padding:.25rem .8rem;font-size:.72rem;font-weight:700;
-  color:var(--accent2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.85rem;
-}
-.sec-title{font-size:clamp(1.6rem,4vw,2.6rem);font-weight:800;letter-spacing:-.02em;margin-bottom:.85rem;line-height:1.15}
-.sec-sub{color:var(--muted);line-height:1.75;max-width:520px}
+    ::selection {
+      background: var(--accent);
+      color: #fff
+    }
 
-/* ── HOW IT WORKS ── */
-.how{background:var(--surface)}
-.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.5rem;margin-top:3rem}
-.step{
-  background:var(--card);border:1px solid var(--border);border-radius:18px;
-  padding:2rem 1.5rem;text-align:center;
-  transition:border-color .3s,transform .3s,box-shadow .3s;position:relative;overflow:hidden;
-}
-.step::before{
-  content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
-  width:60%;height:2px;background:var(--grad);opacity:0;transition:opacity .3s;
-}
-.step:hover{border-color:var(--accent);transform:translateY(-5px);box-shadow:0 12px 40px rgba(109,40,217,.15)}
-.step:hover::before{opacity:1}
-.step-num{
-  width:44px;height:44px;border-radius:12px;background:rgba(109,40,217,.15);
-  display:flex;align-items:center;justify-content:center;
-  font-size:1.1rem;font-weight:900;color:var(--accent2);margin:0 auto 1.1rem;
-}
-.step h3{font-size:.95rem;font-weight:700;margin-bottom:.4rem}
-.step p{font-size:.82rem;color:var(--muted);line-height:1.65}
+    a {
+      text-decoration: none;
+      color: inherit
+    }
 
-/* ── DISEASES GRID ── */
-.d-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.25rem;margin-top:3rem}
-.d-card{
-  background:var(--card);border:1px solid var(--border);border-radius:16px;
-  padding:1.5rem;transition:border-color .3s,transform .3s;
-}
-.d-card:hover{border-color:var(--accent2);transform:translateY(-3px)}
-.d-tag{
-  display:inline-block;font-size:.68rem;font-weight:700;letter-spacing:.06em;
-  text-transform:uppercase;border-radius:999px;padding:.2rem .7rem;margin-bottom:.8rem;
-}
-.tag-danger{background:rgba(239,68,68,.12);color:#f87171}
-.tag-warn  {background:rgba(245,158,11,.12);color:#fbbf24}
-.tag-ok    {background:rgba(16,185,129,.12);color:#34d399}
-.d-card h3{font-size:.95rem;font-weight:700;margin-bottom:.3rem}
-.d-card .alias{font-size:.78rem;color:var(--muted);margin-bottom:.5rem}
-.d-card p{font-size:.82rem;color:var(--dimmed);line-height:1.65}
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: .9rem 2.5rem;
+      background: rgba(6, 8, 16, .8);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
 
-/* ── ANALYZER SECTION ── */
-#check{background:var(--surface)}
-.analyzer{max-width:820px;margin:3rem auto 0}
+    .logo {
+      font-size: 1.3rem;
+      font-weight: 900;
+      letter-spacing: -.02em;
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
 
-/* Tabs */
-.tabs{
-  display:flex;background:var(--card);border:1px solid var(--border);
-  border-radius:14px;overflow:hidden;margin-bottom:1.75rem;
-}
-.tab-btn{
-  flex:1;padding:.8rem;border:none;background:transparent;
-  font-family:inherit;font-size:.88rem;font-weight:600;color:var(--muted);
-  cursor:pointer;display:flex;align-items:center;justify-content:center;
-  gap:.5rem;transition:all .2s;
-}
-.tab-btn.active{background:var(--grad);color:#fff}
-.tab-pane{display:none}
-.tab-pane.active{display:block;animation:fadeIn .25s ease}
-@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+    .logo i {
+      font-size: 1.1rem
+    }
 
-/* Drop zone */
-.drop-zone{
-  border:2px dashed var(--border2);border-radius:18px;padding:3rem;
-  text-align:center;cursor:pointer;transition:border-color .3s,background .3s;
-  position:relative;
-}
-.drop-zone:hover,.drop-zone.over{border-color:var(--accent2);background:rgba(109,40,217,.05)}
-.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer}
-.dz-icon{font-size:2.5rem;color:var(--accent2);margin-bottom:.85rem}
-.drop-zone h3{font-size:1rem;font-weight:700;margin-bottom:.35rem}
-.drop-zone p{font-size:.82rem;color:var(--muted)}
-#preview-wrap{margin:1.25rem 0;display:none}
-#preview-img{max-height:270px;width:100%;object-fit:cover;border-radius:14px;border:1px solid var(--border)}
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none
+    }
 
-/* Camera */
-.cam-view{border-radius:18px;overflow:hidden;background:#000;aspect-ratio:4/3;border:2px solid var(--border)}
-#cam-feed{width:100%;height:100%;object-fit:cover;display:block}
-.cam-ctrls{display:flex;gap:.75rem;justify-content:center;margin-top:1rem;flex-wrap:wrap}
-.cam-btn{
-  background:var(--card2);color:var(--text);border:1px solid var(--border2);
-  border-radius:10px;padding:.6rem 1.4rem;font-family:inherit;font-weight:600;
-  font-size:.875rem;cursor:pointer;display:inline-flex;align-items:center;gap:.4rem;
-  transition:all .2s;
-}
-.cam-btn:hover{border-color:var(--accent2);color:var(--accent2)}
-.cam-btn.danger{color:var(--red);border-color:rgba(239,68,68,.3)}
-.cam-btn.danger:hover{background:rgba(239,68,68,.07)}
-#snap-preview{max-height:220px;width:100%;object-fit:cover;border-radius:14px;
-  border:1px solid var(--border);display:none;margin-top:1rem}
+    .nav-links a {
+      font-size: .875rem;
+      font-weight: 500;
+      color: var(--muted);
+      transition: color .2s
+    }
 
-/* CTA */
-.cta-row{margin-top:1.25rem}
-.cta-row button{width:100%;font-size:1rem}
+    .nav-links a:hover {
+      color: var(--text)
+    }
 
-/* Spinner */
-.spin-wrap{display:none;flex-direction:column;align-items:center;gap:1rem;padding:2rem}
-.spin-wrap.show{display:flex}
-.spinner{
-  width:46px;height:46px;border:3px solid rgba(255,255,255,.08);
-  border-top-color:var(--accent2);border-radius:50%;
-  animation:spin .7s linear infinite;
-}
-@keyframes spin{to{transform:rotate(360deg)}}
-.spin-wrap p{color:var(--muted);font-size:.9rem}
+    .nav-cta {
+      background: var(--grad);
+      color: #fff;
+      padding: .5rem 1.25rem;
+      border-radius: 8px;
+      font-size: .875rem;
+      font-weight: 600;
+      transition: opacity .2s, transform .2s;
+    }
 
-/* ── Result card ── */
-#result-card{
-  background:var(--card);border:1px solid var(--border);border-radius:20px;
-  padding:2rem 2rem 1.5rem;margin-top:2rem;display:none;
-}
-.res-header{display:flex;align-items:center;gap:1rem;margin-bottom:1.75rem;padding-bottom:1.25rem;border-bottom:1px solid var(--border)}
-.res-icon{
-  width:52px;height:52px;border-radius:14px;background:var(--grad);
-  display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:#fff;flex-shrink:0;
-}
-.res-header h2{font-size:1.2rem;font-weight:800}
-.res-header p{font-size:.82rem;color:var(--muted);margin-top:.2rem}
+    .nav-cta:hover {
+      opacity: .85;
+      transform: translateY(-1px)
+    }
 
-/* Low-confidence warning */
-#low-conf-banner{
-  display:none;align-items:flex-start;gap:.65rem;
-  background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);
-  border-radius:12px;padding:.9rem 1.1rem;margin-bottom:1.25rem;
-  font-size:.82rem;color:#fbbf24;line-height:1.6;
-}
-#low-conf-banner i{flex-shrink:0;margin-top:.15rem}
-#low-conf-banner.show{display:flex}
+    @media(max-width:768px) {
+      .nav-links {
+        display: none
+      }
 
-/* Top prediction */
-.top-pred{margin-bottom:1.5rem}
-.pred-name{
-  font-size:1.7rem;font-weight:900;letter-spacing:-.02em;
-  background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  line-height:1.2;
-}
-.pred-alias{font-size:.85rem;color:var(--muted);margin:.2rem 0 .5rem}
-.sev-badge{
-  display:inline-flex;align-items:center;gap:.3rem;font-size:.78rem;font-weight:600;
-  padding:.25rem .75rem;border-radius:999px;border:1px solid;margin-bottom:.85rem;
-}
-.sev-badge.ok    {background:rgba(16,185,129,.1);color:#34d399;border-color:rgba(16,185,129,.25)}
-.sev-badge.warn  {background:rgba(245,158,11,.1);color:#fbbf24;border-color:rgba(245,158,11,.25)}
-.sev-badge.danger{background:rgba(239,68,68,.1);color:#f87171;border-color:rgba(239,68,68,.25)}
+      .nav-cta {
+        padding: .45rem .9rem;
+        font-size: .8rem
+      }
+    }
 
-/* Confidence bar */
-.conf-block{margin-bottom:.5rem}
-.conf-row{display:flex;justify-content:space-between;font-size:.78rem;color:var(--muted);margin-bottom:.35rem}
-.bar-track{height:8px;border-radius:999px;background:rgba(255,255,255,.07);overflow:hidden}
-.bar-fill{height:100%;border-radius:999px;transition:width 1.1s cubic-bezier(.4,0,.2,1)}
-.fill-a{background:var(--grad)}
-.fill-b{background:linear-gradient(90deg,#7c3aed88,#3b82f688)}
-.fill-c{background:linear-gradient(90deg,#6d28d944,#2563eb44)}
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 7rem 1.5rem 5rem;
+      position: relative;
+      overflow: hidden;
+    }
 
-/* ── Info box ── */
-.info-box{
-  background:rgba(255,255,255,.03);border:1px solid var(--border);
-  border-radius:14px;padding:1.25rem 1.5rem;margin:1.25rem 0;
-}
-.info-box h4{
-  font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;
-  color:var(--accent2);font-weight:700;margin-bottom:.6rem;
-  display:flex;align-items:center;gap:.4rem;
-}
-.info-box p{font-size:.875rem;color:var(--muted);line-height:1.75}
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse 70% 55% at 50% -5%, rgba(109, 40, 217, .3), transparent 65%),
+        radial-gradient(ellipse 40% 40% at 85% 80%, rgba(37, 99, 235, .18), transparent 60%);
+    }
 
-/* Common terms pills */
-.terms-box{margin:.75rem 0 1rem}
-.terms-box h4{
-  font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;
-  color:var(--accent2);font-weight:700;margin-bottom:.55rem;
-  display:flex;align-items:center;gap:.4rem;
-}
-.term-pills{display:flex;flex-wrap:wrap;gap:.4rem}
-.term-pill{
-  background:rgba(109,40,217,.1);border:1px solid rgba(109,40,217,.22);
-  border-radius:999px;padding:.2rem .7rem;font-size:.73rem;color:var(--accent2);
-  font-weight:500;transition:background .2s;
-}
-.term-pill:hover{background:rgba(109,40,217,.2)}
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      background: rgba(109, 40, 217, .12);
+      border: 1px solid rgba(109, 40, 217, .35);
+      border-radius: 999px;
+      padding: .35rem 1rem;
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--accent2);
+      margin-bottom: 1.75rem;
+      letter-spacing: .03em;
+    }
 
-/* Meta grid */
-.meta-grid2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:1rem}
-@media(max-width:500px){.meta-grid2{grid-template-columns:1fr}}
-.meta-box{
-  background:rgba(109,40,217,.06);border:1px solid rgba(109,40,217,.15);
-  border-radius:11px;padding:.85rem 1rem;
-}
-.meta-box .mlbl{font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:var(--accent2);font-weight:700;margin-bottom:.3rem;display:flex;align-items:center;gap:.3rem}
-.meta-box .mval{font-size:.825rem;color:var(--text);line-height:1.55}
+    .hero h1 {
+      font-size: clamp(2.8rem, 8vw, 5.5rem);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -.03em;
+      max-width: 900px;
+      margin: 0 auto;
+    }
 
-/* ── Runner-up cards (expanded) ── */
-.runner-up{
-  background:rgba(255,255,255,.025);border:1px solid var(--border);
-  border-radius:14px;padding:1.2rem 1.4rem;margin-top:.75rem;
-}
-.ru-title{font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:.35rem;font-weight:700}
-.ru-name{font-size:1rem;font-weight:700;margin-bottom:.15rem}
-.ru-alias{font-size:.78rem;color:var(--muted);margin-bottom:.4rem}
-.ru-sev{margin-bottom:.55rem}
-.ru-sev .sev-badge{margin-bottom:0}
-.ru-desc{font-size:.81rem;color:var(--dimmed);line-height:1.65;margin-top:.5rem}
-.ru-terms{margin-top:.6rem}
-.ru-terms .term-pills{flex-wrap:wrap}
-.ru-expand-toggle{
-  display:flex;align-items:center;gap:.35rem;margin-top:.65rem;
-  background:none;border:none;cursor:pointer;font-family:inherit;
-  font-size:.77rem;font-weight:600;color:var(--accent2);padding:0;
-  transition:opacity .2s;
-}
-.ru-expand-toggle:hover{opacity:.75}
-.ru-extra{display:none;margin-top:.75rem;border-top:1px solid var(--border);padding-top:.75rem}
-.ru-extra.open{display:block}
-.ru-extra .meta-grid2{margin-top:.5rem}
+    .hero h1 .grad {
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
 
-/* Disclaimer */
-.disclaimer{
-  margin-top:1.25rem;padding:.85rem 1.1rem;border-radius:10px;
-  background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.18);
-  display:flex;gap:.6rem;align-items:flex-start;font-size:.78rem;color:var(--muted);line-height:1.6;
-}
-.disclaimer i{color:var(--red);flex-shrink:0;margin-top:.15rem}
+    .hero p {
+      color: var(--muted);
+      font-size: 1.1rem;
+      max-width: 560px;
+      margin: 1.5rem auto 2.5rem;
+      line-height: 1.75;
+    }
 
-/* ── FOOTER ── */
-footer{
-  background:var(--surface);border-top:1px solid var(--border);
-  padding:3rem 1.5rem 2rem;text-align:center;
-}
-.f-logo{font-size:1.4rem;font-weight:900;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.6rem}
-footer p{font-size:.85rem;color:var(--muted);max-width:480px;margin:.25rem auto}
-.f-credits{font-size:.73rem;color:var(--dimmed);margin-top:1.5rem}
-</style>
+    .hero-btns {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap
+    }
+
+    .btn-primary {
+      background: var(--grad);
+      color: #fff;
+      padding: .9rem 2.2rem;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 1rem;
+      border: none;
+      cursor: pointer;
+      transition: transform .2s, opacity .2s, box-shadow .2s;
+      box-shadow: 0 0 0 rgba(109, 40, 217, 0);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      opacity: .9;
+      box-shadow: 0 6px 28px var(--glow)
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text);
+      padding: .9rem 2.2rem;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 1rem;
+      border: 1px solid var(--border2);
+      cursor: pointer;
+      transition: border-color .2s, transform .2s;
+    }
+
+    .btn-ghost:hover {
+      border-color: var(--accent2);
+      transform: translateY(-2px)
+    }
+
+    /* Stats bar */
+    .stat-bar {
+      display: flex;
+      gap: 2.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 5rem;
+      padding-top: 2.5rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .stat {
+      text-align: center
+    }
+
+    .stat-val {
+      font-size: 2.1rem;
+      font-weight: 900;
+      letter-spacing: -.02em;
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .stat-lbl {
+      font-size: .8rem;
+      color: var(--muted);
+      margin-top: .2rem;
+      letter-spacing: .04em;
+      text-transform: uppercase
+    }
+
+    /* ── SECTIONS ── */
+    section {
+      padding: 5rem 1.5rem
+    }
+
+    .container {
+      max-width: 1080px;
+      margin: 0 auto
+    }
+
+    .sec-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      background: rgba(109, 40, 217, .1);
+      border: 1px solid rgba(109, 40, 217, .25);
+      border-radius: 999px;
+      padding: .25rem .8rem;
+      font-size: .72rem;
+      font-weight: 700;
+      color: var(--accent2);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: .85rem;
+    }
+
+    .sec-title {
+      font-size: clamp(1.6rem, 4vw, 2.6rem);
+      font-weight: 800;
+      letter-spacing: -.02em;
+      margin-bottom: .85rem;
+      line-height: 1.15
+    }
+
+    .sec-sub {
+      color: var(--muted);
+      line-height: 1.75;
+      max-width: 520px
+    }
+
+    /* ── HOW IT WORKS ── */
+    .how {
+      background: var(--surface)
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-top: 3rem
+    }
+
+    .step {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 2rem 1.5rem;
+      text-align: center;
+      transition: border-color .3s, transform .3s, box-shadow .3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .step::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60%;
+      height: 2px;
+      background: var(--grad);
+      opacity: 0;
+      transition: opacity .3s;
+    }
+
+    .step:hover {
+      border-color: var(--accent);
+      transform: translateY(-5px);
+      box-shadow: 0 12px 40px rgba(109, 40, 217, .15)
+    }
+
+    .step:hover::before {
+      opacity: 1
+    }
+
+    .step-num {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(109, 40, 217, .15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      font-weight: 900;
+      color: var(--accent2);
+      margin: 0 auto 1.1rem;
+    }
+
+    .step h3 {
+      font-size: .95rem;
+      font-weight: 700;
+      margin-bottom: .4rem
+    }
+
+    .step p {
+      font-size: .82rem;
+      color: var(--muted);
+      line-height: 1.65
+    }
+
+    /* ── DISEASES GRID ── */
+    .d-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin-top: 3rem
+    }
+
+    .d-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      transition: border-color .3s, transform .3s;
+    }
+
+    .d-card:hover {
+      border-color: var(--accent2);
+      transform: translateY(-3px)
+    }
+
+    .d-tag {
+      display: inline-block;
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      border-radius: 999px;
+      padding: .2rem .7rem;
+      margin-bottom: .8rem;
+    }
+
+    .tag-danger {
+      background: rgba(239, 68, 68, .12);
+      color: #f87171
+    }
+
+    .tag-warn {
+      background: rgba(245, 158, 11, .12);
+      color: #fbbf24
+    }
+
+    .tag-ok {
+      background: rgba(16, 185, 129, .12);
+      color: #34d399
+    }
+
+    .d-card h3 {
+      font-size: .95rem;
+      font-weight: 700;
+      margin-bottom: .3rem
+    }
+
+    .d-card .alias {
+      font-size: .78rem;
+      color: var(--muted);
+      margin-bottom: .5rem
+    }
+
+    .d-card p {
+      font-size: .82rem;
+      color: var(--dimmed);
+      line-height: 1.65
+    }
+
+    /* ── ANALYZER SECTION ── */
+    #check {
+      background: var(--surface)
+    }
+
+    .analyzer {
+      max-width: 820px;
+      margin: 3rem auto 0
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 1.75rem;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: .8rem;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: .88rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .5rem;
+      transition: all .2s;
+    }
+
+    .tab-btn.active {
+      background: var(--grad);
+      color: #fff
+    }
+
+    .tab-pane {
+      display: none
+    }
+
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn .25s ease
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px)
+      }
+
+      to {
+        opacity: 1;
+        transform: none
+      }
+    }
+
+    /* Drop zone */
+    .drop-zone {
+      border: 2px dashed var(--border2);
+      border-radius: 18px;
+      padding: 3rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .3s, background .3s;
+      position: relative;
+    }
+
+    .drop-zone:hover,
+    .drop-zone.over {
+      border-color: var(--accent2);
+      background: rgba(109, 40, 217, .05)
+    }
+
+    .drop-zone input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer
+    }
+
+    .dz-icon {
+      font-size: 2.5rem;
+      color: var(--accent2);
+      margin-bottom: .85rem
+    }
+
+    .drop-zone h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: .35rem
+    }
+
+    .drop-zone p {
+      font-size: .82rem;
+      color: var(--muted)
+    }
+
+    #preview-wrap {
+      margin: 1.25rem 0;
+      display: none
+    }
+
+    #preview-img {
+      max-height: 270px;
+      width: 100%;
+      object-fit: cover;
+      border-radius: 14px;
+      border: 1px solid var(--border)
+    }
+
+    /* Camera */
+    .cam-view {
+      border-radius: 18px;
+      overflow: hidden;
+      background: #000;
+      aspect-ratio: 4/3;
+      border: 2px solid var(--border)
+    }
+
+    #cam-feed {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block
+    }
+
+    .cam-ctrls {
+      display: flex;
+      gap: .75rem;
+      justify-content: center;
+      margin-top: 1rem;
+      flex-wrap: wrap
+    }
+
+    .cam-btn {
+      background: var(--card2);
+      color: var(--text);
+      border: 1px solid var(--border2);
+      border-radius: 10px;
+      padding: .6rem 1.4rem;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: .875rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      transition: all .2s;
+    }
+
+    .cam-btn:hover {
+      border-color: var(--accent2);
+      color: var(--accent2)
+    }
+
+    .cam-btn.danger {
+      color: var(--red);
+      border-color: rgba(239, 68, 68, .3)
+    }
+
+    .cam-btn.danger:hover {
+      background: rgba(239, 68, 68, .07)
+    }
+
+    #snap-preview {
+      max-height: 220px;
+      width: 100%;
+      object-fit: cover;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      display: none;
+      margin-top: 1rem
+    }
+
+    /* CTA */
+    .cta-row {
+      margin-top: 1.25rem
+    }
+
+    .cta-row button {
+      width: 100%;
+      font-size: 1rem
+    }
+
+    /* Spinner */
+    .spin-wrap {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      padding: 2rem
+    }
+
+    .spin-wrap.show {
+      display: flex
+    }
+
+    .spinner {
+      width: 46px;
+      height: 46px;
+      border: 3px solid rgba(255, 255, 255, .08);
+      border-top-color: var(--accent2);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+
+    .spin-wrap p {
+      color: var(--muted);
+      font-size: .9rem
+    }
+
+    /* ── Result card ── */
+    #result-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2rem 2rem 1.5rem;
+      margin-top: 2rem;
+      display: none;
+    }
+
+    .res-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.75rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border)
+    }
+
+    .res-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      background: var(--grad);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .res-header h2 {
+      font-size: 1.2rem;
+      font-weight: 800
+    }
+
+    .res-header p {
+      font-size: .82rem;
+      color: var(--muted);
+      margin-top: .2rem
+    }
+
+    /* Low-confidence warning */
+    #low-conf-banner {
+      display: none;
+      align-items: flex-start;
+      gap: .65rem;
+      background: rgba(245, 158, 11, .08);
+      border: 1px solid rgba(245, 158, 11, .3);
+      border-radius: 12px;
+      padding: .9rem 1.1rem;
+      margin-bottom: 1.25rem;
+      font-size: .82rem;
+      color: #fbbf24;
+      line-height: 1.6;
+    }
+
+    #low-conf-banner i {
+      flex-shrink: 0;
+      margin-top: .15rem
+    }
+
+    #low-conf-banner.show {
+      display: flex
+    }
+
+    /* Top prediction */
+    .top-pred {
+      margin-bottom: 1.5rem
+    }
+
+    .pred-name {
+      font-size: 1.7rem;
+      font-weight: 900;
+      letter-spacing: -.02em;
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1.2;
+    }
+
+    .pred-alias {
+      font-size: .85rem;
+      color: var(--muted);
+      margin: .2rem 0 .5rem
+    }
+
+    .sev-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .3rem;
+      font-size: .78rem;
+      font-weight: 600;
+      padding: .25rem .75rem;
+      border-radius: 999px;
+      border: 1px solid;
+      margin-bottom: .85rem;
+    }
+
+    .sev-badge.ok {
+      background: rgba(16, 185, 129, .1);
+      color: #34d399;
+      border-color: rgba(16, 185, 129, .25)
+    }
+
+    .sev-badge.warn {
+      background: rgba(245, 158, 11, .1);
+      color: #fbbf24;
+      border-color: rgba(245, 158, 11, .25)
+    }
+
+    .sev-badge.danger {
+      background: rgba(239, 68, 68, .1);
+      color: #f87171;
+      border-color: rgba(239, 68, 68, .25)
+    }
+
+    /* Confidence bar */
+    .conf-block {
+      margin-bottom: .5rem
+    }
+
+    .conf-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: .78rem;
+      color: var(--muted);
+      margin-bottom: .35rem
+    }
+
+    .bar-track {
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .07);
+      overflow: hidden
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 1.1s cubic-bezier(.4, 0, .2, 1)
+    }
+
+    .fill-a {
+      background: var(--grad)
+    }
+
+    .fill-b {
+      background: linear-gradient(90deg, #7c3aed88, #3b82f688)
+    }
+
+    .fill-c {
+      background: linear-gradient(90deg, #6d28d944, #2563eb44)
+    }
+
+    /* ── Info box ── */
+    .info-box {
+      background: rgba(255, 255, 255, .03);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem 1.5rem;
+      margin: 1.25rem 0;
+    }
+
+    .info-box h4 {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--accent2);
+      font-weight: 700;
+      margin-bottom: .6rem;
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+    }
+
+    .info-box p {
+      font-size: .875rem;
+      color: var(--muted);
+      line-height: 1.75
+    }
+
+    /* Common terms pills */
+    .terms-box {
+      margin: .75rem 0 1rem
+    }
+
+    .terms-box h4 {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--accent2);
+      font-weight: 700;
+      margin-bottom: .55rem;
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+    }
+
+    .term-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem
+    }
+
+    .term-pill {
+      background: rgba(109, 40, 217, .1);
+      border: 1px solid rgba(109, 40, 217, .22);
+      border-radius: 999px;
+      padding: .2rem .7rem;
+      font-size: .73rem;
+      color: var(--accent2);
+      font-weight: 500;
+      transition: background .2s;
+    }
+
+    .term-pill:hover {
+      background: rgba(109, 40, 217, .2)
+    }
+
+    /* Meta grid */
+    .meta-grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .75rem;
+      margin-top: 1rem
+    }
+
+    @media(max-width:500px) {
+      .meta-grid2 {
+        grid-template-columns: 1fr
+      }
+    }
+
+    .meta-box {
+      background: rgba(109, 40, 217, .06);
+      border: 1px solid rgba(109, 40, 217, .15);
+      border-radius: 11px;
+      padding: .85rem 1rem;
+    }
+
+    .meta-box .mlbl {
+      font-size: .68rem;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--accent2);
+      font-weight: 700;
+      margin-bottom: .3rem;
+      display: flex;
+      align-items: center;
+      gap: .3rem
+    }
+
+    .meta-box .mval {
+      font-size: .825rem;
+      color: var(--text);
+      line-height: 1.55
+    }
+
+    /* ── Runner-up cards (expanded) ── */
+    .runner-up {
+      background: rgba(255, 255, 255, .025);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.2rem 1.4rem;
+      margin-top: .75rem;
+    }
+
+    .ru-title {
+      font-size: .7rem;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--muted);
+      margin-bottom: .35rem;
+      font-weight: 700
+    }
+
+    .ru-name {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: .15rem
+    }
+
+    .ru-alias {
+      font-size: .78rem;
+      color: var(--muted);
+      margin-bottom: .4rem
+    }
+
+    .ru-sev {
+      margin-bottom: .55rem
+    }
+
+    .ru-sev .sev-badge {
+      margin-bottom: 0
+    }
+
+    .ru-desc {
+      font-size: .81rem;
+      color: var(--dimmed);
+      line-height: 1.65;
+      margin-top: .5rem
+    }
+
+    .ru-terms {
+      margin-top: .6rem
+    }
+
+    .ru-terms .term-pills {
+      flex-wrap: wrap
+    }
+
+    .ru-expand-toggle {
+      display: flex;
+      align-items: center;
+      gap: .35rem;
+      margin-top: .65rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: .77rem;
+      font-weight: 600;
+      color: var(--accent2);
+      padding: 0;
+      transition: opacity .2s;
+    }
+
+    .ru-expand-toggle:hover {
+      opacity: .75
+    }
+
+    .ru-extra {
+      display: none;
+      margin-top: .75rem;
+      border-top: 1px solid var(--border);
+      padding-top: .75rem
+    }
+
+    .ru-extra.open {
+      display: block
+    }
+
+    .ru-extra .meta-grid2 {
+      margin-top: .5rem
+    }
+
+    /* Disclaimer */
+    .disclaimer {
+      margin-top: 1.25rem;
+      padding: .85rem 1.1rem;
+      border-radius: 10px;
+      background: rgba(239, 68, 68, .06);
+      border: 1px solid rgba(239, 68, 68, .18);
+      display: flex;
+      gap: .6rem;
+      align-items: flex-start;
+      font-size: .78rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .disclaimer i {
+      color: var(--red);
+      flex-shrink: 0;
+      margin-top: .15rem
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 3rem 1.5rem 2rem;
+      text-align: center;
+    }
+
+    .f-logo {
+      font-size: 1.4rem;
+      font-weight: 900;
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: .6rem
+    }
+
+    footer p {
+      font-size: .85rem;
+      color: var(--muted);
+      max-width: 480px;
+      margin: .25rem auto
+    }
+
+    .f-credits {
+      font-size: .73rem;
+      color: var(--dimmed);
+      margin-top: 1.5rem
+    }
+  </style>
 </head>
+
 <body>
 
-<!-- NAV -->
-<nav>
-  <div class="logo"><i class="fas fa-dna"></i> SkinAI</div>
-  <ul class="nav-links">
-    <li><a href="#home">Home</a></li>
-    <li><a href="#how">How it Works</a></li>
-    <li><a href="#conditions">Conditions</a></li>
-    <li><a href="#check">Analyzer</a></li>
-  </ul>
-  <a href="#check" class="nav-cta">Try Analyzer →</a>
-</nav>
+  <!-- NAV -->
+  <nav>
+    <div class="logo"><i class="fas fa-dna"></i> Skin Disease Detection AI</div>
+    <ul class="nav-links">
+      <li><a href="#home">Home</a></li>
+      <li><a href="#how">How it Works</a></li>
+      <li><a href="#conditions">Conditions</a></li>
+      <li><a href="#check">Analyzer</a></li>
+    </ul>
+    <a href="#check" class="nav-cta">Try Analyzer →</a>
+  </nav>
 
-<!-- HERO -->
-<section class="hero" id="home">
-  <div class="hero-bg"></div>
-  <div class="hero-badge"><i class="fas fa-microscope"></i> HAM10000 · EfficientNetB0 · 7 Classes</div>
-  <h1>Clinical-Grade Skin<br/><span class="grad">Lesion Detection</span></h1>
-  <p>Upload a dermoscopy image or point your live camera. Our deep learning model trained on 10,000+ medical images classifies 7 skin conditions including melanoma — in under 2 seconds.</p>
-  <div class="hero-btns">
-    <button class="btn-primary" onclick="scrollTo('check')"><i class="fas fa-camera-medical"></i> Analyze Now</button>
-    <button class="btn-ghost"   onclick="scrollTo('conditions')">View Conditions</button>
-  </div>
-  <div class="stat-bar">
-    <div class="stat"><div class="stat-val">10,015</div><div class="stat-lbl">Training Images</div></div>
-    <div class="stat"><div class="stat-val">7</div><div class="stat-lbl">Skin Conditions</div></div>
-    <div class="stat"><div class="stat-val">EfficientB0</div><div class="stat-lbl">Architecture</div></div>
-    <div class="stat"><div class="stat-val">Free</div><div class="stat-lbl">No Sign-up</div></div>
-  </div>
-</section>
-
-<!-- HOW IT WORKS -->
-<section class="how" id="how">
-  <div class="container">
-    <div class="sec-chip"><i class="fas fa-route"></i> Process</div>
-    <div class="sec-title">How SkinAI Works</div>
-    <div class="steps">
-      <div class="step"><div class="step-num">1</div><h3>Upload or Capture</h3><p>Upload a saved photo or use your live camera to capture the affected skin area.</p></div>
-      <div class="step"><div class="step-num">2</div><h3>Deep Analysis</h3><p>EfficientNetB0 — pretrained on ImageNet and fine-tuned on HAM10000 — processes your image in real time.</p></div>
-      <div class="step"><div class="step-num">3</div><h3>Clinical Report</h3><p>Top 3 ranked predictions with confidence scores, symptoms, common terms, treatment options, and prevention advice.</p></div>
-      <div class="step"><div class="step-num">4</div><h3>See a Specialist</h3><p>Use results as a reference. Always consult a licensed dermatologist for an official medical diagnosis.</p></div>
+  <!-- HERO -->
+  <section class="hero" id="home">
+    <div class="hero-bg"></div>
+    <div class="hero-badge"><i class="fas fa-microscope"></i> HAM10000 · EfficientNetB0 · 7 Classes</div>
+    <h1>Clinical-Grade Skin<br /><span class="grad">Lesion Detection</span></h1>
+    <p>Upload a dermoscopy image or point your live camera. Our deep learning model trained on 10,000+ medical images
+      classifies 7 skin conditions including melanoma — in under 2 seconds.</p>
+    <div class="hero-btns">
+      <button class="btn-primary" onclick="scrollTo('check')"><i class="fas fa-camera-medical"></i> Analyze Now</button>
+      <button class="btn-ghost" onclick="scrollTo('conditions')">View Conditions</button>
     </div>
-  </div>
-</section>
-
-<!-- CONDITIONS -->
-<section id="conditions">
-  <div class="container">
-    <div class="sec-chip"><i class="fas fa-clipboard-list"></i> Coverage</div>
-    <div class="sec-title">7 Conditions We Detect</div>
-    <div class="sec-sub">All conditions are from the HAM10000 clinical dermoscopy dataset.</div>
-    <div class="d-grid">
-      <div class="d-card"><span class="d-tag tag-warn">Precancerous</span><h3>Actinic Keratosis</h3><p class="alias">AK / Solar Keratosis</p><p>Rough, scaly sun-damaged patches that can progress to squamous cell carcinoma if untreated.</p></div>
-      <div class="d-card"><span class="d-tag tag-danger">Malignant</span><h3>Basal Cell Carcinoma</h3><p class="alias">BCC — Most Common Skin Cancer</p><p>Slow-growing cancer from basal cells. Rarely metastasises but causes local tissue damage.</p></div>
-      <div class="d-card"><span class="d-tag tag-ok">Benign</span><h3>Benign Keratosis</h3><p class="alias">Seborrheic Keratosis / BKL</p><p>Harmless waxy growths that appear "stuck on" the skin. Common with ageing, no treatment required.</p></div>
-      <div class="d-card"><span class="d-tag tag-ok">Benign</span><h3>Dermatofibroma</h3><p class="alias">Fibrous Histiocytoma / DF</p><p>Hard, firm nodule under the skin from accumulated fibroblasts. Dimples inward when pinched.</p></div>
-      <div class="d-card"><span class="d-tag tag-danger">High Risk</span><h3>Melanoma</h3><p class="alias">Malignant Melanoma</p><p>The deadliest skin cancer. Develops from melanocytes and can rapidly metastasise to organs.</p></div>
-      <div class="d-card"><span class="d-tag tag-ok">Benign</span><h3>Melanocytic Nevi</h3><p class="alias">Common Mole / NV</p><p>Clusters of melanocytes. Most are harmless but should be monitored for changes (ABCDE rule).</p></div>
-      <div class="d-card"><span class="d-tag tag-ok">Benign</span><h3>Vascular Lesion</h3><p class="alias">Cherry Angioma / VASC</p><p>Blood vessel-derived lesions ranging from cherry angiomas to angiokeratomas. Generally benign.</p></div>
+    <div class="stat-bar">
+      <div class="stat">
+        <div class="stat-val">10,015</div>
+        <div class="stat-lbl">Training Images</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val">7</div>
+        <div class="stat-lbl">Skin Conditions</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val">EfficientB0</div>
+        <div class="stat-lbl">Architecture</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val">Free</div>
+        <div class="stat-lbl">No Sign-up</div>
+      </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- ANALYZER -->
-<section id="check">
-  <div class="container" style="text-align:center">
-    <div class="sec-chip" style="margin:0 auto .85rem"><i class="fas fa-flask"></i> Live Analyzer</div>
-    <div class="sec-title">Analyze Your Skin</div>
-    <p class="sec-sub" style="margin:0 auto 0">Upload an image or use your camera for instant AI-powered skin lesion analysis.</p>
-
-    <div class="analyzer">
-      <!-- Tabs -->
-      <div class="tabs">
-        <button class="tab-btn active" id="t-upload-btn" onclick="switchTab('upload')"><i class="fas fa-upload"></i> Upload Image</button>
-        <button class="tab-btn" id="t-camera-btn" onclick="switchTab('camera')"><i class="fas fa-video"></i> Live Camera</button>
-      </div>
-
-      <!-- Upload Pane -->
-      <div class="tab-pane active" id="t-upload">
-        <div class="drop-zone" id="dz">
-          <input type="file" id="file-input" accept="image/*"/>
-          <div class="dz-icon"><i class="fas fa-cloud-upload-alt"></i></div>
-          <h3>Drop image here or click to browse</h3>
-          <p>Supports JPG, PNG, WEBP · Max 16 MB</p>
+  <!-- HOW IT WORKS -->
+  <section class="how" id="how">
+    <div class="container">
+      <div class="sec-chip"><i class="fas fa-route"></i> Process</div>
+      <div class="sec-title">How Skin Disease Detection AI Works</div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <h3>Upload or Capture</h3>
+          <p>Upload a saved photo or use your live camera to capture the affected skin area.</p>
         </div>
-        <div id="preview-wrap"><img id="preview-img" src="" alt="Preview"/></div>
-        <div class="cta-row" id="upload-cta" style="display:none">
-          <button class="btn-primary" onclick="analyzeFile()"><i class="fas fa-dna"></i> Run AI Analysis</button>
+        <div class="step">
+          <div class="step-num">2</div>
+          <h3>Deep Analysis</h3>
+          <p>EfficientNetB0 — pretrained on ImageNet and fine-tuned on HAM10000 — processes your image in real time.</p>
         </div>
-      </div>
-
-      <!-- Camera Pane -->
-      <div class="tab-pane" id="t-camera">
-        <div class="cam-view"><video id="cam-feed" autoplay playsinline muted></video></div>
-        <canvas id="snap-canvas" style="display:none"></canvas>
-        <img id="snap-preview" src="" alt="Captured"/>
-        <div class="cam-ctrls">
-          <button class="cam-btn" id="cam-start" onclick="startCam()"><i class="fas fa-video"></i> Start Camera</button>
-          <button class="cam-btn" id="cam-snap" onclick="snapCam()" style="display:none"><i class="fas fa-circle-dot"></i> Capture</button>
-          <button class="cam-btn danger" id="cam-stop" onclick="stopCam()" style="display:none"><i class="fas fa-stop"></i> Stop</button>
+        <div class="step">
+          <div class="step-num">3</div>
+          <h3>Clinical Report</h3>
+          <p>Top 3 ranked predictions with confidence scores, symptoms, common terms, treatment options, and prevention
+            advice.</p>
         </div>
-        <div class="cta-row" id="camera-cta" style="display:none">
-          <button class="btn-primary" onclick="analyzeSnap()"><i class="fas fa-dna"></i> Analyze Captured Photo</button>
+        <div class="step">
+          <div class="step-num">4</div>
+          <h3>See a Specialist</h3>
+          <p>Use results as a reference. Always consult a licensed dermatologist for an official medical diagnosis.</p>
         </div>
       </div>
+    </div>
+  </section>
 
-      <!-- Spinner -->
-      <div class="spin-wrap" id="spin-wrap">
-        <div class="spinner"></div>
-        <p>Running inference — please wait…</p>
+  <!-- CONDITIONS -->
+  <section id="conditions">
+    <div class="container">
+      <div class="sec-chip"><i class="fas fa-clipboard-list"></i> Coverage</div>
+      <div class="sec-title">7 Conditions We Detect</div>
+      <div class="sec-sub">All conditions are from the HAM10000 clinical dermoscopy dataset.</div>
+      <div class="d-grid">
+        <div class="d-card"><span class="d-tag tag-warn">Precancerous</span>
+          <h3>Actinic Keratosis</h3>
+          <p class="alias">AK / Solar Keratosis</p>
+          <p>Rough, scaly sun-damaged patches that can progress to squamous cell carcinoma if untreated.</p>
+        </div>
+        <div class="d-card"><span class="d-tag tag-danger">Malignant</span>
+          <h3>Basal Cell Carcinoma</h3>
+          <p class="alias">BCC — Most Common Skin Cancer</p>
+          <p>Slow-growing cancer from basal cells. Rarely metastasises but causes local tissue damage.</p>
+        </div>
+        <div class="d-card"><span class="d-tag tag-ok">Benign</span>
+          <h3>Benign Keratosis</h3>
+          <p class="alias">Seborrheic Keratosis / BKL</p>
+          <p>Harmless waxy growths that appear "stuck on" the skin. Common with ageing, no treatment required.</p>
+        </div>
+        <div class="d-card"><span class="d-tag tag-ok">Benign</span>
+          <h3>Dermatofibroma</h3>
+          <p class="alias">Fibrous Histiocytoma / DF</p>
+          <p>Hard, firm nodule under the skin from accumulated fibroblasts. Dimples inward when pinched.</p>
+        </div>
+        <div class="d-card"><span class="d-tag tag-danger">High Risk</span>
+          <h3>Melanoma</h3>
+          <p class="alias">Malignant Melanoma</p>
+          <p>The deadliest skin cancer. Develops from melanocytes and can rapidly metastasise to organs.</p>
+        </div>
+        <div class="d-card"><span class="d-tag tag-ok">Benign</span>
+          <h3>Melanocytic Nevi</h3>
+          <p class="alias">Common Mole / NV</p>
+          <p>Clusters of melanocytes. Most are harmless but should be monitored for changes (ABCDE rule).</p>
+        </div>
+        <div class="d-card"><span class="d-tag tag-ok">Benign</span>
+          <h3>Vascular Lesion</h3>
+          <p class="alias">Cherry Angioma / VASC</p>
+          <p>Blood vessel-derived lesions ranging from cherry angiomas to angiokeratomas. Generally benign.</p>
+        </div>
       </div>
+    </div>
+  </section>
 
-      <!-- ══════════ RESULT CARD ══════════ -->
-      <div id="result-card">
-        <div class="res-header">
-          <div class="res-icon"><i class="fas fa-stethoscope"></i></div>
-          <div><h2>Analysis Complete</h2><p>AI result · Not a clinical diagnosis · Consult a dermatologist</p></div>
+  <!-- ANALYZER -->
+  <section id="check">
+    <div class="container" style="text-align:center">
+      <div class="sec-chip" style="margin:0 auto .85rem"><i class="fas fa-flask"></i> Live Analyzer</div>
+      <div class="sec-title">Analyze Your Skin</div>
+      <p class="sec-sub" style="margin:0 auto 0">Upload an image or use your camera for instant AI-powered skin lesion
+        analysis.</p>
+
+      <div class="analyzer">
+        <!-- Tabs -->
+        <div class="tabs">
+          <button class="tab-btn active" id="t-upload-btn" onclick="switchTab('upload')"><i class="fas fa-upload"></i>
+            Upload Image</button>
+          <button class="tab-btn" id="t-camera-btn" onclick="switchTab('camera')"><i class="fas fa-video"></i> Live
+            Camera</button>
         </div>
 
-        <!-- Low-confidence warning -->
-        <div id="low-conf-banner">
-          <i class="fas fa-triangle-exclamation"></i>
-          <span>The model's confidence is <strong>low</strong> for this image. Predictions may be unreliable — please ensure the image is clear, well-lit, and focused on the lesion. Always verify with a licensed dermatologist.</span>
-        </div>
-
-        <!-- ── PRIMARY PREDICTION ── -->
-        <div class="top-pred">
-          <div class="pred-name" id="r-name">—</div>
-          <div class="pred-alias" id="r-alias"></div>
-          <div class="sev-badge" id="r-sev-badge"></div>
-          <div class="conf-block">
-            <div class="conf-row"><span>Confidence</span><span id="r-conf">0%</span></div>
-            <div class="bar-track"><div class="bar-fill fill-a" id="r-bar" style="width:0%"></div></div>
+        <!-- Upload Pane -->
+        <div class="tab-pane active" id="t-upload">
+          <div class="drop-zone" id="dz">
+            <input type="file" id="file-input" accept="image/*" />
+            <div class="dz-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+            <h3>Drop image here or click to browse</h3>
+            <p>Supports JPG, PNG, WEBP · Max 16 MB</p>
+          </div>
+          <div id="preview-wrap"><img id="preview-img" src="" alt="Preview" /></div>
+          <div class="cta-row" id="upload-cta" style="display:none">
+            <button class="btn-primary" onclick="analyzeFile()"><i class="fas fa-dna"></i> Run AI Analysis</button>
           </div>
         </div>
 
-        <!-- Description -->
-        <div class="info-box">
-          <h4><i class="fas fa-info-circle"></i> About This Condition</h4>
-          <p id="r-desc">—</p>
-        </div>
-
-        <!-- Common Medical Terms -->
-        <div class="terms-box">
-          <h4><i class="fas fa-tags"></i> Common Medical Terms</h4>
-          <div class="term-pills" id="r-terms"></div>
-        </div>
-
-        <!-- Symptoms / Treatment / Prevention -->
-        <div class="meta-grid2">
-          <div class="meta-box"><div class="mlbl"><i class="fas fa-clipboard-list"></i> Symptoms</div><div class="mval" id="r-sym">—</div></div>
-          <div class="meta-box"><div class="mlbl"><i class="fas fa-pills"></i> Treatment</div><div class="mval" id="r-trt">—</div></div>
-          <div class="meta-box" style="grid-column:1/-1"><div class="mlbl"><i class="fas fa-shield-halved"></i> Prevention</div><div class="mval" id="r-prev">—</div></div>
-        </div>
-
-        <!-- ── OTHER POSSIBILITIES ── -->
-        <div style="margin-top:1.5rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700">Other Possibilities</div>
-
-        <!-- Runner-up 2 -->
-        <div class="runner-up" id="ru2">
-          <div class="ru-title">2nd most likely</div>
-          <div class="ru-name" id="r2-name">—</div>
-          <div class="ru-alias" id="r2-alias"></div>
-          <div class="ru-sev"><span class="sev-badge" id="r2-sev"></span></div>
-          <div class="conf-block">
-            <div class="conf-row"><span></span><span id="r2-conf">0%</span></div>
-            <div class="bar-track"><div class="bar-fill fill-b" id="r2-bar" style="width:0%"></div></div>
+        <!-- Camera Pane -->
+        <div class="tab-pane" id="t-camera">
+          <div class="cam-view"><video id="cam-feed" autoplay playsinline muted></video></div>
+          <canvas id="snap-canvas" style="display:none"></canvas>
+          <img id="snap-preview" src="" alt="Captured" />
+          <div class="cam-ctrls">
+            <button class="cam-btn" id="cam-start" onclick="startCam()"><i class="fas fa-video"></i> Start
+              Camera</button>
+            <button class="cam-btn" id="cam-snap" onclick="snapCam()" style="display:none"><i
+                class="fas fa-circle-dot"></i> Capture</button>
+            <button class="cam-btn danger" id="cam-stop" onclick="stopCam()" style="display:none"><i
+                class="fas fa-stop"></i> Stop</button>
           </div>
-          <div class="ru-desc" id="r2-desc"></div>
-          <div class="ru-terms"><div class="term-pills" id="r2-terms"></div></div>
-          <button class="ru-expand-toggle" onclick="toggleRu('ru2-extra',this)">
-            <i class="fas fa-chevron-down"></i> Show symptoms &amp; treatment
-          </button>
-          <div class="ru-extra" id="ru2-extra">
-            <div class="meta-grid2">
-              <div class="meta-box"><div class="mlbl"><i class="fas fa-clipboard-list"></i> Symptoms</div><div class="mval" id="r2-sym">—</div></div>
-              <div class="meta-box"><div class="mlbl"><i class="fas fa-pills"></i> Treatment</div><div class="mval" id="r2-trt">—</div></div>
-              <div class="meta-box" style="grid-column:1/-1"><div class="mlbl"><i class="fas fa-shield-halved"></i> Prevention</div><div class="mval" id="r2-prev">—</div></div>
+          <div class="cta-row" id="camera-cta" style="display:none">
+            <button class="btn-primary" onclick="analyzeSnap()"><i class="fas fa-dna"></i> Analyze Captured
+              Photo</button>
+          </div>
+        </div>
+
+        <!-- Spinner -->
+        <div class="spin-wrap" id="spin-wrap">
+          <div class="spinner"></div>
+          <p>Running inference — please wait…</p>
+        </div>
+
+        <!-- ══════════ RESULT CARD ══════════ -->
+        <div id="result-card">
+          <div class="res-header">
+            <div class="res-icon"><i class="fas fa-stethoscope"></i></div>
+            <div>
+              <h2>Analysis Complete</h2>
+              <p>AI result · Not a clinical diagnosis · Consult a dermatologist</p>
             </div>
           </div>
-        </div>
 
-        <!-- Runner-up 3 -->
-        <div class="runner-up" id="ru3">
-          <div class="ru-title">3rd most likely</div>
-          <div class="ru-name" id="r3-name">—</div>
-          <div class="ru-alias" id="r3-alias"></div>
-          <div class="ru-sev"><span class="sev-badge" id="r3-sev"></span></div>
-          <div class="conf-block">
-            <div class="conf-row"><span></span><span id="r3-conf">0%</span></div>
-            <div class="bar-track"><div class="bar-fill fill-c" id="r3-bar" style="width:0%"></div></div>
+          <!-- Low-confidence warning -->
+          <div id="low-conf-banner">
+            <i class="fas fa-triangle-exclamation"></i>
+            <span>The model's confidence is <strong>low</strong> for this image. Predictions may be unreliable — please
+              ensure the image is clear, well-lit, and focused on the lesion. Always verify with a licensed
+              dermatologist.</span>
           </div>
-          <div class="ru-desc" id="r3-desc"></div>
-          <div class="ru-terms"><div class="term-pills" id="r3-terms"></div></div>
-          <button class="ru-expand-toggle" onclick="toggleRu('ru3-extra',this)">
-            <i class="fas fa-chevron-down"></i> Show symptoms &amp; treatment
-          </button>
-          <div class="ru-extra" id="ru3-extra">
-            <div class="meta-grid2">
-              <div class="meta-box"><div class="mlbl"><i class="fas fa-clipboard-list"></i> Symptoms</div><div class="mval" id="r3-sym">—</div></div>
-              <div class="meta-box"><div class="mlbl"><i class="fas fa-pills"></i> Treatment</div><div class="mval" id="r3-trt">—</div></div>
-              <div class="meta-box" style="grid-column:1/-1"><div class="mlbl"><i class="fas fa-shield-halved"></i> Prevention</div><div class="mval" id="r3-prev">—</div></div>
+
+          <!-- ── PRIMARY PREDICTION ── -->
+          <div class="top-pred">
+            <div class="pred-name" id="r-name">—</div>
+            <div class="pred-alias" id="r-alias"></div>
+            <div class="sev-badge" id="r-sev-badge"></div>
+            <div class="conf-block">
+              <div class="conf-row"><span>Confidence</span><span id="r-conf">0%</span></div>
+              <div class="bar-track">
+                <div class="bar-fill fill-a" id="r-bar" style="width:0%"></div>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="disclaimer">
-          <i class="fas fa-triangle-exclamation"></i>
-          <span>This tool is for <strong>educational purposes only</strong> and does not constitute medical advice. Results are generated by an AI model and may be inaccurate. Always consult a qualified dermatologist for diagnosis and treatment of skin conditions.</span>
-        </div>
-      </div><!-- /result-card -->
+          <!-- Description -->
+          <div class="info-box">
+            <h4><i class="fas fa-info-circle"></i> About This Condition</h4>
+            <p id="r-desc">—</p>
+          </div>
 
-    </div><!-- /analyzer -->
-  </div>
-</section>
+          <!-- Common Medical Terms -->
+          <div class="terms-box">
+            <h4><i class="fas fa-tags"></i> Common Medical Terms</h4>
+            <div class="term-pills" id="r-terms"></div>
+          </div>
 
-<!-- FOOTER -->
-<footer>
-  <div class="f-logo"><i class="fas fa-dna"></i> SkinAI</div>
-  <p>Clinical skin lesion detection powered by EfficientNetB0 trained on HAM10000.</p>
-  <p>Team 21 · 213CSE4301 · Pattern &amp; Anomaly Detection</p>
-  <div class="f-credits">For educational use only · Not a medical device · © 2026 SkinAI</div>
-</footer>
+          <!-- Symptoms / Treatment / Prevention -->
+          <div class="meta-grid2">
+            <div class="meta-box">
+              <div class="mlbl"><i class="fas fa-clipboard-list"></i> Symptoms</div>
+              <div class="mval" id="r-sym">—</div>
+            </div>
+            <div class="meta-box">
+              <div class="mlbl"><i class="fas fa-pills"></i> Treatment</div>
+              <div class="mval" id="r-trt">—</div>
+            </div>
+            <div class="meta-box" style="grid-column:1/-1">
+              <div class="mlbl"><i class="fas fa-shield-halved"></i> Prevention</div>
+              <div class="mval" id="r-prev">—</div>
+            </div>
+          </div>
 
-<script>
-/* ───── helpers ───── */
-function scrollTo(id){ document.getElementById(id).scrollIntoView({behavior:'smooth'}); }
+          <!-- ── OTHER POSSIBILITIES ── -->
+          <div
+            style="margin-top:1.5rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700">
+            Other Possibilities</div>
 
-function sevClass(sevStr){
-  if(!sevStr) return 'ok';
-  const s = sevStr.toLowerCase();
-  if(s.includes('malignant') || s.includes('high-risk') || s.includes('high risk')) return 'danger';
-  if(s.includes('precancerous')) return 'warn';
-  return 'ok';
-}
+          <!-- Runner-up 2 -->
+          <div class="runner-up" id="ru2">
+            <div class="ru-title">2nd most likely</div>
+            <div class="ru-name" id="r2-name">—</div>
+            <div class="ru-alias" id="r2-alias"></div>
+            <div class="ru-sev"><span class="sev-badge" id="r2-sev"></span></div>
+            <div class="conf-block">
+              <div class="conf-row"><span></span><span id="r2-conf">0%</span></div>
+              <div class="bar-track">
+                <div class="bar-fill fill-b" id="r2-bar" style="width:0%"></div>
+              </div>
+            </div>
+            <div class="ru-desc" id="r2-desc"></div>
+            <div class="ru-terms">
+              <div class="term-pills" id="r2-terms"></div>
+            </div>
+            <button class="ru-expand-toggle" onclick="toggleRu('ru2-extra',this)">
+              <i class="fas fa-chevron-down"></i> Show symptoms &amp; treatment
+            </button>
+            <div class="ru-extra" id="ru2-extra">
+              <div class="meta-grid2">
+                <div class="meta-box">
+                  <div class="mlbl"><i class="fas fa-clipboard-list"></i> Symptoms</div>
+                  <div class="mval" id="r2-sym">—</div>
+                </div>
+                <div class="meta-box">
+                  <div class="mlbl"><i class="fas fa-pills"></i> Treatment</div>
+                  <div class="mval" id="r2-trt">—</div>
+                </div>
+                <div class="meta-box" style="grid-column:1/-1">
+                  <div class="mlbl"><i class="fas fa-shield-halved"></i> Prevention</div>
+                  <div class="mval" id="r2-prev">—</div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-function renderTerms(containerId, terms){
-  const el = document.getElementById(containerId);
-  if(!el) return;
-  el.innerHTML = '';
-  if(!terms || !terms.length){ el.innerHTML = '<span style="font-size:.78rem;color:var(--dimmed)">—</span>'; return; }
-  terms.forEach(t=>{
-    const span = document.createElement('span');
-    span.className='term-pill';
-    span.textContent = t;
-    el.appendChild(span);
-  });
-}
+          <!-- Runner-up 3 -->
+          <div class="runner-up" id="ru3">
+            <div class="ru-title">3rd most likely</div>
+            <div class="ru-name" id="r3-name">—</div>
+            <div class="ru-alias" id="r3-alias"></div>
+            <div class="ru-sev"><span class="sev-badge" id="r3-sev"></span></div>
+            <div class="conf-block">
+              <div class="conf-row"><span></span><span id="r3-conf">0%</span></div>
+              <div class="bar-track">
+                <div class="bar-fill fill-c" id="r3-bar" style="width:0%"></div>
+              </div>
+            </div>
+            <div class="ru-desc" id="r3-desc"></div>
+            <div class="ru-terms">
+              <div class="term-pills" id="r3-terms"></div>
+            </div>
+            <button class="ru-expand-toggle" onclick="toggleRu('ru3-extra',this)">
+              <i class="fas fa-chevron-down"></i> Show symptoms &amp; treatment
+            </button>
+            <div class="ru-extra" id="ru3-extra">
+              <div class="meta-grid2">
+                <div class="meta-box">
+                  <div class="mlbl"><i class="fas fa-clipboard-list"></i> Symptoms</div>
+                  <div class="mval" id="r3-sym">—</div>
+                </div>
+                <div class="meta-box">
+                  <div class="mlbl"><i class="fas fa-pills"></i> Treatment</div>
+                  <div class="mval" id="r3-trt">—</div>
+                </div>
+                <div class="meta-box" style="grid-column:1/-1">
+                  <div class="mlbl"><i class="fas fa-shield-halved"></i> Prevention</div>
+                  <div class="mval" id="r3-prev">—</div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-function setSevBadge(id, sevStr){
-  const el = document.getElementById(id);
-  if(!el) return;
-  el.textContent = sevStr || '';
-  el.className = 'sev-badge ' + sevClass(sevStr);
-}
+          <div class="disclaimer">
+            <i class="fas fa-triangle-exclamation"></i>
+            <span>This tool is for <strong>educational purposes only</strong> and does not constitute medical advice.
+              Results are generated by an AI model and may be inaccurate. Always consult a qualified dermatologist for
+              diagnosis and treatment of skin conditions.</span>
+          </div>
+        </div><!-- /result-card -->
 
-function toggleRu(extraId, btn){
-  const el = document.getElementById(extraId);
-  const open = el.classList.toggle('open');
-  const icon = btn.querySelector('i');
-  icon.className = open ? 'fas fa-chevron-up' : 'fas fa-chevron-down';
-  btn.childNodes[1].textContent = open ? ' Hide details' : ' Show symptoms & treatment';
-}
+      </div><!-- /analyzer -->
+    </div>
+  </section>
 
-/* ───── Tabs ───── */
-function switchTab(name){
-  ['upload','camera'].forEach(t=>{
-    document.getElementById('t-'+t+'-btn').classList.toggle('active', t===name);
-    document.getElementById('t-'+t).classList.toggle('active', t===name);
-  });
-  if(name==='upload') stopCam();
-}
+  <!-- FOOTER -->
+  <footer>
+    <div class="f-logo"><i class="fas fa-dna"></i> Skin Disease Detection AI </div>
+    <p>Clinical skin lesion detection powered by EfficientNetB0 trained on HAM10000.</p>
+    <p>Team 21 · 213CSE4301 · Pattern &amp; Anomaly Detection</p>
+    <div class="f-credits">For educational use only · Not a medical device · © 2026 Skin Disease Detection AI </div>
+  </footer>
 
-/* ───── Upload ───── */
-const dz      = document.getElementById('dz');
-const fi      = document.getElementById('file-input');
-const prvWrap = document.getElementById('preview-wrap');
-const prvImg  = document.getElementById('preview-img');
-let uploadFile = null;
+  <script>
+    /* ───── helpers ───── */
+    function scrollTo(id) { document.getElementById(id).scrollIntoView({ behavior: 'smooth' }); }
 
-dz.addEventListener('dragover', e=>{ e.preventDefault(); dz.classList.add('over'); });
-dz.addEventListener('dragleave',()=> dz.classList.remove('over'));
-dz.addEventListener('drop', e=>{ e.preventDefault(); dz.classList.remove('over'); if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
-fi.addEventListener('change',()=>{ if(fi.files[0]) handleFile(fi.files[0]); });
+    function sevClass(sevStr) {
+      if (!sevStr) return 'ok';
+      const s = sevStr.toLowerCase();
+      if (s.includes('malignant') || s.includes('high-risk') || s.includes('high risk')) return 'danger';
+      if (s.includes('precancerous')) return 'warn';
+      return 'ok';
+    }
 
-function handleFile(f){
-  if(!f.type.startsWith('image/')){ alert('Please upload an image file.'); return; }
-  uploadFile = f;
-  const r = new FileReader();
-  r.onload = e=>{ prvImg.src = e.target.result; };
-  r.readAsDataURL(f);
-  prvWrap.style.display = 'block';
-  document.getElementById('upload-cta').style.display = 'block';
-  hideResult();
-}
+    function renderTerms(containerId, terms) {
+      const el = document.getElementById(containerId);
+      if (!el) return;
+      el.innerHTML = '';
+      if (!terms || !terms.length) { el.innerHTML = '<span style="font-size:.78rem;color:var(--dimmed)">—</span>'; return; }
+      terms.forEach(t => {
+        const span = document.createElement('span');
+        span.className = 'term-pill';
+        span.textContent = t;
+        el.appendChild(span);
+      });
+    }
 
-function analyzeFile(){
-  if(!uploadFile){ alert('Select an image first.'); return; }
-  const fd = new FormData();
-  fd.append('file', uploadFile);
-  runInference(()=> fetch('/predict',{method:'POST',body:fd}));
-}
+    function setSevBadge(id, sevStr) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = sevStr || '';
+      el.className = 'sev-badge ' + sevClass(sevStr);
+    }
 
-/* ───── Camera ───── */
-let stream=null, snapData=null;
+    function toggleRu(extraId, btn) {
+      const el = document.getElementById(extraId);
+      const open = el.classList.toggle('open');
+      const icon = btn.querySelector('i');
+      icon.className = open ? 'fas fa-chevron-up' : 'fas fa-chevron-down';
+      btn.childNodes[1].textContent = open ? ' Hide details' : ' Show symptoms & treatment';
+    }
 
-async function startCam(){
-  try{
-    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false});
-    document.getElementById('cam-feed').srcObject = stream;
-    document.getElementById('cam-start').style.display='none';
-    document.getElementById('cam-snap').style.display='inline-flex';
-    document.getElementById('cam-stop').style.display='inline-flex';
-    document.getElementById('snap-preview').style.display='none';
-    document.getElementById('camera-cta').style.display='none';
-    hideResult();
-  }catch(e){ alert('Camera unavailable or permission denied. Use HTTPS or localhost.'); }
-}
+    /* ───── Tabs ───── */
+    function switchTab(name) {
+      ['upload', 'camera'].forEach(t => {
+        document.getElementById('t-' + t + '-btn').classList.toggle('active', t === name);
+        document.getElementById('t-' + t).classList.toggle('active', t === name);
+      });
+      if (name === 'upload') stopCam();
+    }
 
-function stopCam(){
-  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
-  const v = document.getElementById('cam-feed');
-  v.srcObject=null;
-  document.getElementById('cam-start').style.display='inline-flex';
-  document.getElementById('cam-snap').style.display='none';
-  document.getElementById('cam-stop').style.display='none';
-}
+    /* ───── Upload ───── */
+    const dz = document.getElementById('dz');
+    const fi = document.getElementById('file-input');
+    const prvWrap = document.getElementById('preview-wrap');
+    const prvImg = document.getElementById('preview-img');
+    let uploadFile = null;
 
-function snapCam(){
-  const v  = document.getElementById('cam-feed');
-  const c  = document.getElementById('snap-canvas');
-  c.width  = v.videoWidth  || 512;
-  c.height = v.videoHeight || 512;
-  c.getContext('2d').drawImage(v,0,0);
-  snapData = c.toDataURL('image/jpeg',0.92);
-  const sp = document.getElementById('snap-preview');
-  sp.src = snapData; sp.style.display='block';
-  document.getElementById('camera-cta').style.display='block';
-  hideResult();
-}
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+    dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('over'); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+    fi.addEventListener('change', () => { if (fi.files[0]) handleFile(fi.files[0]); });
 
-function analyzeSnap(){
-  if(!snapData){ alert('Capture a photo first.'); return; }
-  runInference(()=> fetch('/predict',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({image: snapData})
-  }));
-}
+    function handleFile(f) {
+      if (!f.type.startsWith('image/')) { alert('Please upload an image file.'); return; }
+      uploadFile = f;
+      const r = new FileReader();
+      r.onload = e => { prvImg.src = e.target.result; };
+      r.readAsDataURL(f);
+      prvWrap.style.display = 'block';
+      document.getElementById('upload-cta').style.display = 'block';
+      hideResult();
+    }
 
-/* ───── Shared inference ───── */
-const spinEl = document.getElementById('spin-wrap');
-const resEl  = document.getElementById('result-card');
+    function analyzeFile() {
+      if (!uploadFile) { alert('Select an image first.'); return; }
+      const fd = new FormData();
+      fd.append('file', uploadFile);
+      runInference(() => fetch('/predict', { method: 'POST', body: fd }));
+    }
 
-function hideResult(){
-  resEl.style.display='none';
-  spinEl.classList.remove('show');
-  // reset runner-up expand toggles
-  ['ru2-extra','ru3-extra'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el) el.classList.remove('open');
-  });
-}
+    /* ───── Camera ───── */
+    let stream = null, snapData = null;
 
-function runInference(fetchFn){
-  spinEl.classList.add('show');
-  resEl.style.display='none';
-  document.getElementById('upload-cta').style.display='none';
-  document.getElementById('camera-cta').style.display='none';
+    async function startCam() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+        document.getElementById('cam-feed').srcObject = stream;
+        document.getElementById('cam-start').style.display = 'none';
+        document.getElementById('cam-snap').style.display = 'inline-flex';
+        document.getElementById('cam-stop').style.display = 'inline-flex';
+        document.getElementById('snap-preview').style.display = 'none';
+        document.getElementById('camera-cta').style.display = 'none';
+        hideResult();
+      } catch (e) { alert('Camera unavailable or permission denied. Use HTTPS or localhost.'); }
+    }
 
-  fetchFn()
-    .then(r=>r.json())
-    .then(d=>{
+    function stopCam() {
+      if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+      const v = document.getElementById('cam-feed');
+      v.srcObject = null;
+      document.getElementById('cam-start').style.display = 'inline-flex';
+      document.getElementById('cam-snap').style.display = 'none';
+      document.getElementById('cam-stop').style.display = 'none';
+    }
+
+    function snapCam() {
+      const v = document.getElementById('cam-feed');
+      const c = document.getElementById('snap-canvas');
+      c.width = v.videoWidth || 512;
+      c.height = v.videoHeight || 512;
+      c.getContext('2d').drawImage(v, 0, 0);
+      snapData = c.toDataURL('image/jpeg', 0.92);
+      const sp = document.getElementById('snap-preview');
+      sp.src = snapData; sp.style.display = 'block';
+      document.getElementById('camera-cta').style.display = 'block';
+      hideResult();
+    }
+
+    function analyzeSnap() {
+      if (!snapData) { alert('Capture a photo first.'); return; }
+      runInference(() => fetch('/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: snapData })
+      }));
+    }
+
+    /* ───── Shared inference ───── */
+    const spinEl = document.getElementById('spin-wrap');
+    const resEl = document.getElementById('result-card');
+
+    function hideResult() {
+      resEl.style.display = 'none';
       spinEl.classList.remove('show');
-      document.getElementById('upload-cta').style.display='block';
-      document.getElementById('camera-cta').style.display='block';
-      if(d.error){ alert('Error: '+d.error); return; }
-      showResult(d);
-    })
-    .catch(()=>{
-      spinEl.classList.remove('show');
-      document.getElementById('upload-cta').style.display='block';
-      document.getElementById('camera-cta').style.display='block';
-      alert('Server error. Make sure the Flask app is running.');
-    });
-}
+      // reset runner-up expand toggles
+      ['ru2-extra', 'ru3-extra'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('open');
+      });
+    }
 
-function showResult(d){
-  const rs = d.results || [];
-  if(!rs.length) return;
+    function runInference(fetchFn) {
+      spinEl.classList.add('show');
+      resEl.style.display = 'none';
+      document.getElementById('upload-cta').style.display = 'none';
+      document.getElementById('camera-cta').style.display = 'none';
 
-  // ── Low-confidence banner ──
-  const banner = document.getElementById('low-conf-banner');
-  if(d.low_conf_warning || d.fallback){
-    banner.classList.add('show');
-  } else {
-    banner.classList.remove('show');
-  }
+      fetchFn()
+        .then(r => r.json())
+        .then(d => {
+          spinEl.classList.remove('show');
+          document.getElementById('upload-cta').style.display = 'block';
+          document.getElementById('camera-cta').style.display = 'block';
+          if (d.error) { alert('Error: ' + d.error); return; }
+          showResult(d);
+        })
+        .catch(() => {
+          spinEl.classList.remove('show');
+          document.getElementById('upload-cta').style.display = 'block';
+          document.getElementById('camera-cta').style.display = 'block';
+          alert('Server error. Make sure the Flask app is running.');
+        });
+    }
 
-  // ── Top prediction ──
-  const top = rs[0];
-  document.getElementById('r-name').textContent  = top.disease    || '—';
-  document.getElementById('r-alias').textContent = top.alias      || '';
-  document.getElementById('r-desc').textContent  = top.description|| '—';
-  document.getElementById('r-sym').textContent   = top.symptoms   || '—';
-  document.getElementById('r-trt').textContent   = top.treatment  || '—';
-  document.getElementById('r-prev').textContent  = top.prevention || '—';
-  document.getElementById('r-conf').textContent  = top.confidence + '%';
-  setSevBadge('r-sev-badge', top.severity);
-  renderTerms('r-terms', top.common_terms);
+    function showResult(d) {
+      const rs = d.results || [];
+      if (!rs.length) return;
 
-  // ── Runner-up helper ──
-  function fillRu(prefix, r){
-    if(!r) return;
-    document.getElementById(prefix+'-name').textContent  = r.disease    || '—';
-    document.getElementById(prefix+'-alias').textContent = r.alias      || '';
-    document.getElementById(prefix+'-conf').textContent  = r.confidence + '%';
-    document.getElementById(prefix+'-desc').textContent  = r.description|| '';
-    document.getElementById(prefix+'-sym').textContent   = r.symptoms   || '—';
-    document.getElementById(prefix+'-trt').textContent   = r.treatment  || '—';
-    document.getElementById(prefix+'-prev').textContent  = r.prevention || '—';
-    setSevBadge(prefix+'-sev', r.severity);
-    renderTerms(prefix+'-terms', r.common_terms);
-  }
+      // ── Low-confidence banner ──
+      const banner = document.getElementById('low-conf-banner');
+      if (d.low_conf_warning || d.fallback) {
+        banner.classList.add('show');
+      } else {
+        banner.classList.remove('show');
+      }
 
-  const r2 = rs[1], r3 = rs[2];
-  fillRu('r2', r2);
-  fillRu('r3', r3);
+      // ── Top prediction ──
+      const top = rs[0];
+      document.getElementById('r-name').textContent = top.disease || '—';
+      document.getElementById('r-alias').textContent = top.alias || '';
+      document.getElementById('r-desc').textContent = top.description || '—';
+      document.getElementById('r-sym').textContent = top.symptoms || '—';
+      document.getElementById('r-trt').textContent = top.treatment || '—';
+      document.getElementById('r-prev').textContent = top.prevention || '—';
+      document.getElementById('r-conf').textContent = top.confidence + '%';
+      setSevBadge('r-sev-badge', top.severity);
+      renderTerms('r-terms', top.common_terms);
 
-  resEl.style.display = 'block';
-  resEl.scrollIntoView({behavior:'smooth', block:'nearest'});
+      // ── Runner-up helper ──
+      function fillRu(prefix, r) {
+        if (!r) return;
+        document.getElementById(prefix + '-name').textContent = r.disease || '—';
+        document.getElementById(prefix + '-alias').textContent = r.alias || '';
+        document.getElementById(prefix + '-conf').textContent = r.confidence + '%';
+        document.getElementById(prefix + '-desc').textContent = r.description || '';
+        document.getElementById(prefix + '-sym').textContent = r.symptoms || '—';
+        document.getElementById(prefix + '-trt').textContent = r.treatment || '—';
+        document.getElementById(prefix + '-prev').textContent = r.prevention || '—';
+        setSevBadge(prefix + '-sev', r.severity);
+        renderTerms(prefix + '-terms', r.common_terms);
+      }
 
-  const fill = d.fallback ? 0 : top.confidence;
-  requestAnimationFrame(()=>{
-    document.getElementById('r-bar').style.width   = fill + '%';
-    document.getElementById('r2-bar').style.width  = (r2 ? r2.confidence : 0) + '%';
-    document.getElementById('r3-bar').style.width  = (r3 ? r3.confidence : 0) + '%';
-  });
-}
-</script>
+      const r2 = rs[1], r3 = rs[2];
+      fillRu('r2', r2);
+      fillRu('r3', r3);
+
+      resEl.style.display = 'block';
+      resEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+      const fill = d.fallback ? 0 : top.confidence;
+      requestAnimationFrame(() => {
+        document.getElementById('r-bar').style.width = fill + '%';
+        document.getElementById('r2-bar').style.width = (r2 ? r2.confidence : 0) + '%';
+        document.getElementById('r3-bar').style.width = (r3 ? r3.confidence : 0) + '%';
+      });
+    }
+  </script>
 </body>
+
 </html>

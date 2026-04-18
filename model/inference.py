@@ -427,17 +427,12 @@ class SkinAIPredictor:
                     'low_conf_warning': True,
                 }
 
-            # ── Inconclusive band: 40% ≤ confidence < 60% ────────────────
-            if top_conf < 60.0:
-                logger.warning(f"Low-confidence prediction. top_conf: {top_conf}")
-                return {
-                    'prediction': 'Inconclusive',
-                    'confidence': top_conf,
-                    'message':    'Low confidence — image may not show a recognizable skin condition.',
-                    'warning':    True,
-                }
-
-            low_conf_warning = top_conf < 65.0
+            # Always return the best prediction for a valid skin image.
+            # low_conf_warning lets the frontend show a caution banner without
+            # hiding the result from the user.
+            low_conf_warning = top_conf < 60.0
+            if low_conf_warning:
+                logger.info(f"Returning prediction with low-conf warning. top_conf: {top_conf}")
 
             return {
                 'results':           results,
